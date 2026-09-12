@@ -9,7 +9,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const config: CapacitorConfig = {
   appId: "com.agrocords.ventana",
-  appName: "Ventana de Aplicación",
+  appName: "AgroCordS",
   webDir: "www",
   server: {
     url: "https://agro-ia-orcin.vercel.app",
