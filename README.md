@@ -218,7 +218,7 @@ Sin esta variable, `POST /api/chat` devuelve 503 y la pantalla del chat lo muest
 Cómo funciona:
 
 - **Única frontera con el proveedor** ([groq.ts](src/lib/chat/groq.ts)): arma el prompt, llama a `POST https://api.groq.com/openai/v1/chat/completions` con `fetch` (sin SDK nueva, mismo criterio que `pagos/rpc.ts`), y valida la respuesta con Zod antes de devolverla. Cambiar de proveedor de LLM toca sólo este archivo.
-- **Modelo**: `llama-3.3-70b-versatile` por defecto, configurable con `GROQ_MODEL` opcional.
+- **Modelo**: `openai/gpt-oss-120b` por defecto, configurable con `GROQ_MODEL` opcional (verificado contra la API real de Groq — el catálogo de modelos hospedados cambia, así que no se asume de memoria).
 - **JSON forzado**: el system prompt exige `{"respuesta": string, "acciones": string[]}` (`response_format: json_object`); si Groq devuelve otra forma, la API route responde 503 en vez de mostrar un JSON roto.
 - **Nunca inventa datos**: el prompt de sistema instruye usar sólo el contexto del lote que se le pasa (el mismo `Diagnostico` de la pantalla) y decir explícitamente cuando un dato no está disponible.
 - **Límite de 5 consultas gratis por día** aplicado en el cliente ([limite.ts](src/lib/chat/limite.ts)) — sin backend ni cuentas, es el mismo modelo de confianza que el resto del Paywall de demo.

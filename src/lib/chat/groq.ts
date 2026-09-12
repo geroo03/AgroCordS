@@ -16,7 +16,14 @@ import { contextoATexto } from "./contexto";
 import type { ContextoLote, MensajeChat, RespuestaChat } from "./tipos";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODELO_POR_DEFECTO = "llama-3.3-70b-versatile";
+/**
+ * Verificado contra la API real de Groq (no de memoria: el catálogo de
+ * modelos hospedados cambia). `openai/gpt-oss-120b` sigue el modo JSON y
+ * responde bien en español; `openai/gpt-oss-20b` es la alternativa liviana
+ * si hace falta más velocidad. Ver `GET /openai/v1/models` con la propia
+ * API key para la lista vigente.
+ */
+const MODELO_POR_DEFECTO = "openai/gpt-oss-120b";
 /** Últimos mensajes de la conversación que se reenvían como historial. */
 const MAX_HISTORIAL = 8;
 const TIMEOUT_MS = 20_000;
