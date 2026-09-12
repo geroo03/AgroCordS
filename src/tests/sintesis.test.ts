@@ -56,6 +56,7 @@ const obs = (
   ndre,
   coberturaNubesPct: 0,
   confianza: ndvi === null ? "nula" : "alta",
+  variabilidad: null,
 });
 
 const base: EntradaSintesis = {

@@ -111,6 +111,9 @@ function serieDemo(parametros: ParametrosSerieSatelital): SerieSatelital {
       ndre: l.ndre,
       coberturaNubesPct: null,
       confianza: null,
+      // Sin píxeles no hay dispersión que medir: inventar una sería afirmar
+      // algo sobre el interior de un lote que nunca se observó.
+      variabilidad: null,
     }));
   return { fuente: "demo", real: false, observaciones };
 }

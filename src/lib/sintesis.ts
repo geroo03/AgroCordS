@@ -24,6 +24,7 @@
  * en evidencia, y por eso es peor que no concluir.
  */
 
+import { rumboViento } from "./formato";
 import type { RiesgoHelada } from "./helada";
 import type { ObservacionSatelital } from "./satelital/tipos";
 import type { HourAssessment, SprayWindow } from "./spray-engine";
@@ -98,6 +99,13 @@ export const UMBRALES_SINTESIS = {
   agua: { riesgo: 0.7, atencion: 0.5, cambioRelevante: 0.05 },
   /** Variación de NDVI que deja de ser ruido entre dos pasadas. */
   vigor: { cambioRelevante: 0.05 },
+  /**
+   * Desvío del NDVI dentro del lote a partir del cual deja de ser un lote y
+   * pasan a ser dos. Medido sobre lotes reales de la zona: un cultivo parejo
+   * ronda 0,14 y un rastrojo uniforme 0,02, mientras que un lote partido
+   * llega a 0,36.
+   */
+  desparejo: 0.2,
   /** Por debajo de esta relación NDRE/NDVI hay divergencia entre índices. */
   divergencia: 0.45,
   /** Horas dentro de las cuales una helada se considera inminente. */
@@ -315,6 +323,33 @@ function evaluarCultivo(entrada: EntradaSintesis): Hallazgo {
     evidencia.push({ etiqueta: "NDRE", valor: ultima.ndre.toFixed(2) });
   }
 
+  const v = ultima.variabilidad;
+  const desparejo = v !== null && v.desvio > UMBRALES_SINTESIS.desparejo;
+  if (v !== null) {
+    evidencia.push(
+      { etiqueta: "Dispersión dentro del lote", valor: v.desvio.toFixed(2) },
+      { etiqueta: "Décimo peor / mejor", valor: `${v.p10.toFixed(2)} — ${v.p90.toFixed(2)}` },
+    );
+  }
+
+  // Un lote partido se informa aunque el promedio se vea bien: es la única
+  // lectura que dice POR DÓNDE caminar, y el promedio no la deja ver.
+  if (desparejo && v !== null) {
+    return {
+      categoria: "cultivo",
+      estado: "atencion",
+      titular: "El lote está desparejo por dentro",
+      interpretacion: `El promedio de NDVI es ${ndviHoy.toFixed(2)}, pero el décimo peor del lote está en ${v.p10.toFixed(2)} y el décimo mejor en ${v.p90.toFixed(2)}: no hay un sector que valga el promedio. ${
+        delta < -UMBRALES_SINTESIS.vigor.cambioRelevante
+          ? "Además viene cayendo entre pasadas."
+          : "La diferencia puede venir del suelo, de la implantación o de un problema localizado."
+      }`,
+      aEvaluar:
+        "Conviene recorrer el lote comparando el sector de menor vigor con el resto, antes de decidir un manejo uniforme.",
+      evidencia,
+    };
+  }
+
   const divergencia =
     ultima.ndre !== null &&
     ndviHoy > 0 &&
@@ -370,12 +405,23 @@ function evaluarAplicacion(entrada: EntradaSintesis): Hallazgo {
   const bloqueo = actual.reasons.find((r) => r.severity === "blocker");
   const hayVentana = ventanas.length > 0;
 
+  const direccion =
+    actual.conditions.windDirectionDeg !== undefined
+      ? rumboViento(actual.conditions.windDirectionDeg)
+      : null;
+
   const evidencia: Evidencia[] = [
     { etiqueta: "Delta-T", valor: actual.deltaT.toLocaleString("es-AR") },
     { etiqueta: "Viento", valor: `${Math.round(actual.conditions.windSpeedKmh)} km/h` },
     { etiqueta: "Ráfagas", valor: `${Math.round(actual.conditions.windGustsKmh)} km/h` },
     { etiqueta: "Humedad", valor: `${Math.round(actual.conditions.relativeHumidityPct)} %` },
   ];
+  if (direccion) {
+    evidencia.splice(2, 0, {
+      etiqueta: "Deriva hacia",
+      valor: `el ${direccion.hacia}`,
+    });
+  }
 
   if (favorable) {
     return {

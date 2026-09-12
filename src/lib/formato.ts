@@ -54,6 +54,29 @@ export function fechaHoraLegible(iso: string): string {
   ).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
 }
 
+const RUMBOS = [
+  "norte",
+  "noreste",
+  "este",
+  "sudeste",
+  "sur",
+  "sudoeste",
+  "oeste",
+  "noroeste",
+] as const;
+
+/**
+ * Traduce la dirección del viento a rumbos.
+ *
+ * Open-Meteo informa DESDE dónde sopla; para pulverizar lo que importa es
+ * hacia dónde va la deriva, que es el rumbo opuesto. Se devuelven los dos
+ * porque el parte meteorológico usa uno y el aplicador necesita el otro.
+ */
+export function rumboViento(grados: number): { desde: string; hacia: string } {
+  const i = ((Math.round(grados / 45) % 8) + 8) % 8;
+  return { desde: RUMBOS[i], hacia: RUMBOS[(i + 4) % 8] };
+}
+
 export function hectareas(areaHa: number): string {
   return `${areaHa.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha`;
 }

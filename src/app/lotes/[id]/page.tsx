@@ -7,7 +7,6 @@ import DetalleHora from "@/components/decision/DetalleHora";
 import MiniaturaLote from "@/components/mapa/MiniaturaLote";
 import LineaDeTiempo from "@/components/decision/LineaDeTiempo";
 import Ventanas from "@/components/decision/Ventanas";
-import Veredicto from "@/components/decision/Veredicto";
 import RegistrarAplicacion from "@/components/registro/RegistrarAplicacion";
 import SelectorProducto, {
   type SeleccionProducto,
@@ -26,6 +25,8 @@ import { sintetizar, type EntradaAgua } from "@/lib/sintesis";
 import { calcularIndiceAgotamiento } from "@/lib/agronomico";
 import { fetchHistoricoDiario } from "@/lib/historico";
 import { fechaLocalHoy } from "@/lib/formato";
+import { esPremium } from "@/lib/plan";
+import type { ObservacionSatelital } from "@/lib/satelital/tipos";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
@@ -44,6 +45,10 @@ export default function PaginaDecision() {
   // El balance hídrico alimenta al diagnóstico. Se guarda junto al id del
   // lote que lo produjo: al abrir otro lote el dato deja de aplicar y la
   // síntesis lo informa como sin datos, en vez de mostrar el del anterior.
+  const [vigorCargado, setVigorCargado] = useState<{
+    loteId: string;
+    observaciones: ObservacionSatelital[];
+  } | null>(null);
   const [aguaCargada, setAguaCargada] = useState<{
     loteId: string;
     datos: EntradaAgua;
@@ -111,10 +116,35 @@ export default function PaginaDecision() {
     };
   }, [lote]);
 
+  useEffect(() => {
+    // Sólo con Premium: es la consulta que consume cuota del proveedor. Sin
+    // ella la síntesis informa el vigor como sin datos y lo dice.
+    if (!lote || lote === "no_encontrado" || !esPremium()) return;
+    const { id, geometry } = lote;
+    let vigente = true;
+    const hasta = fechaLocalHoy();
+    const desde = new Date(Date.now() - 130 * 86_400_000).toISOString().slice(0, 10);
+    fetch(
+      `/api/satellite?polygon=${encodeURIComponent(JSON.stringify(geometry))}&from=${desde}&to=${hasta}`,
+    )
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((serie: { observaciones: ObservacionSatelital[] }) => {
+        if (vigente) setVigorCargado({ loteId: id, observaciones: serie.observaciones });
+      })
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+  }, [lote]);
+
   // Todos los hooks corren antes de cualquier return: su cantidad no puede
   // cambiar entre renders.
   const datosDelRender = datos;
   const cultivo = lote && lote !== "no_encontrado" ? lote.cultivo : null;
+  const vigor =
+    lote && lote !== "no_encontrado" && vigorCargado?.loteId === lote.id
+      ? vigorCargado.observaciones
+      : null;
   const agua =
     lote && lote !== "no_encontrado" && aguaCargada?.loteId === lote.id
       ? aguaCargada.datos
@@ -138,11 +168,9 @@ export default function PaginaDecision() {
             )
           : [],
         agua,
-        // El vigor satelital consume cuota del proveedor y vive detrás del
-        // paywall: la síntesis lo informa como sin datos en vez de gastarla.
-        vigor: null,
+        vigor,
       }),
-    [cultivo, actualParaSintesis, datosDelRender, agua],
+    [cultivo, actualParaSintesis, datosDelRender, agua, vigor],
   );
 
   if (lote === "no_encontrado") {
@@ -213,7 +241,6 @@ export default function PaginaDecision() {
       ) : (
         <>
           <Diagnostico diagnostico={diagnostico} />
-          <Veredicto actual={actual} esAhora={datos.current !== null} />
           <ValorEconomico
             valor={estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa)}
           />

@@ -166,6 +166,9 @@ describe("obtenerSerieSatelital", () => {
       ndre: 0.41,
       coberturaNubesPct: 5,
       confianza: "alta",
+      // El mock no informa desvío ni percentiles: sin ellos no se inventa
+      // una dispersión para el interior del lote.
+      variabilidad: null,
     });
     expect(serie.observaciones[1].coberturaNubesPct).toBe(10);
   });

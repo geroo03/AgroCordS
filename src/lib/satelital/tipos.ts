@@ -30,6 +30,16 @@ export type FuenteSerieSatelital = "sentinel-2" | "demo";
  */
 export type NivelConfianza = "alta" | "media" | "baja" | "nula";
 
+/** Cómo se reparte el índice dentro del polígono en una pasada. */
+export interface VariabilidadLote {
+  /** Desvío estándar del NDVI entre los píxeles limpios del lote. */
+  readonly desvio: number;
+  /** El décimo peor del lote está por debajo de este NDVI. */
+  readonly p10: number;
+  /** El décimo mejor está por encima de este NDVI. */
+  readonly p90: number;
+}
+
 /** Una observación en una fecha puntual, real o de demostración. */
 export interface ObservacionSatelital {
   /**
@@ -55,6 +65,20 @@ export interface ObservacionSatelital {
    * Invariante: `confianza === "nula"` ⟺ `ndvi`/`ndre` son `null`.
    */
   readonly confianza: NivelConfianza | null;
+
+  /**
+   * Cómo se reparte el NDVI DENTRO del lote en esa pasada.
+   *
+   * El promedio solo describe a un lote que no existe: con media 0,30, un
+   * décimo del lote en 0,07 y otro décimo en 0,74, no hay ningún sector que
+   * valga 0,30. La dispersión es lo que dice si la media representa al lote o
+   * esconde dos lotes adentro de uno — y con eso, si conviene recorrerlo.
+   *
+   * Sentinel Hub ya devolvía el desvío en la misma respuesta que veníamos
+   * consultando; los percentiles se piden aparte. `null` en la serie de
+   * demostración, donde no hay píxeles que medir.
+   */
+  readonly variabilidad: VariabilidadLote | null;
 }
 
 export interface SerieSatelital {

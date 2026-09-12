@@ -26,6 +26,14 @@ export interface HourlyConditions {
   readonly relativeHumidityPct: number;
   /** Viento a 10 m, km/h. */
   readonly windSpeedKmh: number;
+  /**
+   * Dirección DESDE la que sopla el viento, en grados (0 = norte, 90 = este),
+   * como la informa Open-Meteo. La deriva va hacia el rumbo opuesto.
+   * Opcional: el motor no la usa para decidir — no cambia si una hora es apta
+   * — pero sí decide hacia dónde puede derivar, que es información que el
+   * aplicador necesita y la app no daba.
+   */
+  readonly windDirectionDeg?: number;
   /** Ráfagas a 10 m, km/h. */
   readonly windGustsKmh: number;
   /** Precipitación acumulada en la hora, mm. */

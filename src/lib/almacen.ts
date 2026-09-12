@@ -104,10 +104,25 @@ export function guardarAplicacion(datos: NuevaAplicacion): Aplicacion {
 
 // ── Lotes de ejemplo para la demo ────────────────────────────
 
+/**
+ * Lotes de ejemplo. Las coordenadas NO son los centros de las ciudades: se
+ * eligieron midiendo NDVI real con Sentinel-2 sobre varios candidatos, porque
+ * las anteriores caían sobre el casco urbano y el "vigor" que mostraban era
+ * el de un pueblo, no el de un cultivo.
+ *
+ * Los tres son trigo porque en septiembre, en Córdoba, es lo que está en pie:
+ * la soja y el maíz todavía no se sembraron. Además es el cultivo con umbral
+ * de helada propio, que es el riesgo de la época.
+ *
+ * Cada uno cuenta algo distinto, medido:
+ *   Villa María    NDVI ~0,70 y parejo  → cultivo en pleno desarrollo.
+ *   Marcos Juárez  NDVI ~0,43 muy disperso → lote desparejo por dentro.
+ *   Río Cuarto     NDVI ~0,45 intermedio.
+ */
 const DEMOS = [
-  { nombre: "La Esperanza — Marcos Juárez", cultivo: "Soja", lat: -32.7, lng: -62.1, anchoKm: 1.2, altoKm: 0.7 },
-  { nombre: "Don Emilio — Río Cuarto", cultivo: "Maíz", lat: -33.12, lng: -64.35, anchoKm: 0.9, altoKm: 0.9 },
-  { nombre: "El Bajo — Villa María", cultivo: "Trigo", lat: -32.41, lng: -63.24, anchoKm: 1.5, altoKm: 0.55 },
+  { nombre: "El Bajo — Villa María", cultivo: "Trigo", lat: -32.41, lng: -63.14, anchoKm: 1.5, altoKm: 0.55, fechaSiembra: "2026-06-05" },
+  { nombre: "La Esperanza — Marcos Juárez", cultivo: "Trigo", lat: -32.78, lng: -62.1, anchoKm: 1.2, altoKm: 0.7, fechaSiembra: "2026-06-20" },
+  { nombre: "Don Emilio — Río Cuarto", cultivo: "Trigo", lat: -33.04, lng: -64.35, anchoKm: 0.9, altoKm: 0.9, fechaSiembra: "2026-06-15" },
 ] as const;
 
 function rectangulo(lat: number, lng: number, anchoKm: number, altoKm: number): Polygon {
@@ -132,6 +147,7 @@ export function cargarLotesDemo(): Lote[] {
     guardarLote({
       nombre: d.nombre,
       cultivo: d.cultivo,
+      fechaSiembra: d.fechaSiembra,
       geometry: rectangulo(d.lat, d.lng, d.anchoKm, d.altoKm),
     });
   }

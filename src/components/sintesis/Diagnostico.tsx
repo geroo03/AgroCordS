@@ -58,7 +58,11 @@ export default function Diagnostico({ diagnostico }: { diagnostico: TipoDiagnost
           <span className={`h-3 w-3 shrink-0 rounded-full ${estilo.punto}`} aria-hidden />
           <span className={estilo.texto}>{estilo.etiqueta}</span>
         </p>
-        <h2 className="mt-1 text-xl leading-snug font-extrabold">{diagnostico.titular}</h2>
+        {/* Hereda el peso visual que tenía el veredicto, que decía lo mismo:
+            sigue habiendo un elemento memorable, pero uno solo. */}
+        <h2 className="mt-1 text-[clamp(28px,7vw,40px)] leading-[1.1] font-extrabold">
+          {diagnostico.titular}
+        </h2>
 
         <div className="mt-4 space-y-4">
           {conDatos.map((h) => (

@@ -18,7 +18,11 @@ import type { Polygon } from "geojson";
 import { medirPoligono } from "../geo";
 import { clasificarConfianza, FRACCION_LIMPIA_MINIMA, type CredencialesSentinelHub } from "./config";
 import { EVALSCRIPT_NDVI_NDRE } from "./evalscript";
-import { ErrorSatelital, type ObservacionSatelital } from "./tipos";
+import {
+  ErrorSatelital,
+  type ObservacionSatelital,
+  type VariabilidadLote,
+} from "./tipos";
 
 const TIMEOUT_TOKEN_MS = 8_000;
 const TIMEOUT_STATS_MS = 15_000;
@@ -151,6 +155,12 @@ export async function consultarEstadisticasSentinelHub(
       resx,
       resy,
     },
+    // El desvío y los extremos vienen por defecto; los percentiles hay que
+    // pedirlos. Sin ellos sólo se sabe cuánto varía el lote, no entre qué
+    // valores — y "el décimo peor está en 0,07" es lo que manda a recorrerlo.
+    calculations: {
+      ndvi: { statistics: { default: { percentiles: { k: [10, 90] } } } },
+    },
   };
 
   let respuesta: Response;
@@ -253,6 +263,8 @@ interface AporteIntervalo {
   /** Media sobre los píxeles válidos, o `null` si la API no la informó. */
   ndvi: number | null;
   ndre: number | null;
+  /** Reparto del NDVI dentro del lote, si la API lo informó. */
+  variabilidad: VariabilidadLote | null;
 }
 
 /**
@@ -296,6 +308,7 @@ export function parsearRespuestaEstadisticas(
       validos: Math.max(0, muestras - sinDato),
       ndvi: extraerNumero(intervalo, ["outputs", "ndvi", "bands", "B0", "stats", "mean"]),
       ndre: extraerNumero(intervalo, ["outputs", "ndre", "bands", "B0", "stats", "mean"]),
+      variabilidad: leerVariabilidad(intervalo),
     };
     const acumulado = porFecha.get(fecha);
     if (acumulado) acumulado.push(aporte);
@@ -335,6 +348,41 @@ function fusionarPorFecha(
     ndre: confiable ? redondear(mediaPonderada(aportes, "ndre")) : null,
     coberturaNubesPct,
     confianza: clasificarConfianza(fraccionLimpiaLote),
+    // Se toma la del aporte con más píxeles limpios en vez de promediar: para
+    // combinar la dispersión de dos tiles haría falta la distribución
+    // completa, no sus resúmenes. Promediar desvíos daría un número que no es
+    // el desvío de nada.
+    variabilidad: confiable ? variabilidadDominante(aportes) : null,
+  };
+}
+
+/** Variabilidad del aporte que cubre la mayor parte del lote. */
+function variabilidadDominante(
+  aportes: readonly AporteIntervalo[],
+): VariabilidadLote | null {
+  let mejor: AporteIntervalo | null = null;
+  for (const aporte of aportes) {
+    if (!aporte.variabilidad) continue;
+    if (!mejor || aporte.validos > mejor.validos) mejor = aporte;
+  }
+  return mejor?.variabilidad ?? null;
+}
+
+/**
+ * Desvío y percentiles del NDVI dentro del lote. El desvío viene siempre; los
+ * percentiles sólo si se pidieron en `calculations`. Sin ambos no se informa
+ * variabilidad: media un valor a medias es peor que no darlo.
+ */
+function leerVariabilidad(intervalo: unknown): VariabilidadLote | null {
+  const base = ["outputs", "ndvi", "bands", "B0", "stats"];
+  const desvio = extraerNumero(intervalo, [...base, "stDev"]);
+  const p10 = extraerNumero(intervalo, [...base, "percentiles", "10.0"]);
+  const p90 = extraerNumero(intervalo, [...base, "percentiles", "90.0"]);
+  if (desvio === null || p10 === null || p90 === null) return null;
+  return {
+    desvio: redondear(desvio) ?? 0,
+    p10: redondear(p10) ?? 0,
+    p90: redondear(p90) ?? 0,
   };
 }
 

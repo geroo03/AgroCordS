@@ -44,6 +44,7 @@ function observacion(fecha: string, ndvi: number | null): ObservacionSatelital {
     ndre: ndvi !== null ? ndvi * 0.5 : null,
     coberturaNubesPct: 0,
     confianza: ndvi !== null ? "alta" : "nula",
+    variabilidad: null,
   };
 }
 

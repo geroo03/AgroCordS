@@ -112,14 +112,21 @@ export default function PaginaLotes() {
                 className="flex min-h-16 items-center gap-3 rounded-xl border border-niebla p-3"
               >
                 <MiniaturaLote lote={lote} className="h-18 w-18" />
+                {/* El estado va debajo y no al costado: compitiendo por el
+                    ancho en un teléfono, el nombre del lote se truncaba a la
+                    mitad y es lo que identifica la fila. */}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-bold">{lote.nombre}</span>
+                  <span className="block text-base leading-snug font-bold">
+                    {lote.nombre}
+                  </span>
                   <span className="block text-sm text-tinta/70">
                     {lote.cultivo ? `${lote.cultivo} · ` : ""}
                     {hectareas(lote.areaHa)}
                   </span>
+                  <span className="mt-1 block">
+                    <EstadoPunto lat={lote.centroidLat} lng={lote.centroidLng} />
+                  </span>
                 </span>
-                <EstadoPunto lat={lote.centroidLat} lng={lote.centroidLng} />
               </Link>
             </li>
           ))}
