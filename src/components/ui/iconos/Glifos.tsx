@@ -184,3 +184,22 @@ export function GlifoSalir() {
     </svg>
   );
 }
+
+/** Asistente conversacional: globo de diálogo. */
+export function GlifoChat() {
+  return (
+    <svg {...BASE}>
+      <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.35 0-2.62-.32-3.73-.9L3 20l1.1-4.15A8.47 8.47 0 0 1 3 11.5 8.5 8.5 0 0 1 11.5 3h1A8.5 8.5 0 0 1 21 11.5Z" />
+    </svg>
+  );
+}
+
+/** Acción sugerida: idea/foco, para distinguir "qué conviene hacer" del texto libre. */
+export function GlifoIdea() {
+  return (
+    <svg {...BASE}>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.8 1 .8 1.6v.5h5.4v-.5c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3z" />
+    </svg>
+  );
+}
