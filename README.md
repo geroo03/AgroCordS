@@ -132,7 +132,7 @@ Puente entre lo agronómico y lo financiero ([riesgo.ts](src/lib/riesgo.ts)), co
 
 ## Decisiones de la demo
 
-- **Sin capa de costes ni servicios con registro.** La persistencia es `localStorage` del navegador ([almacen.ts](src/lib/almacen.ts)) en lugar de Supabase, y no hay autenticación. La interfaz del almacén imita las consultas que después harían `supabase-js` + RLS: cambiar de backend toca solo ese archivo. El SQL del esquema está en el blueprint (sección 5).
+- **Sin capa de costes ni servicios con registro.** La persistencia es `localStorage` del navegador ([almacen.ts](src/lib/almacen.ts)) en lugar de Supabase, y no hay autenticación. La interfaz del almacén imita las consultas que después harían `supabase-js` + RLS: cambiar de backend toca solo ese archivo. El esquema SQL ya está escrito, ver [Base de datos](#base-de-datos-supabase).
 - **Clima**: Open-Meteo, sin API key, con caché de 30 min en el servidor. La API route (`GET /api/forecast?lat&lng&productType`) valida con Zod y devuelve las 72 horas evaluadas más las ventanas.
 - **Motor de decisión** ([spray-engine.ts](src/lib/spray-engine.ts)): funciones puras, umbrales Delta-T de GRDC/BoM adoptados por INTA. Provisto, no modificado. Ídem [openmeteo.ts](src/lib/openmeteo.ts).
 - **Zonas horarias**: las horas del pronóstico son cadenas ISO locales del lote y nunca se convierten a `Date`; la hora "actual" se busca comparando contra la hora local del servidor (en la demo, servidor y lote comparten zona).
@@ -224,6 +224,46 @@ Cómo funciona:
 - **Límite de 5 consultas gratis por día** aplicado en el cliente ([limite.ts](src/lib/chat/limite.ts)) — sin backend ni cuentas, es el mismo modelo de confianza que el resto del Paywall de demo.
 
 Obtener una API key: crear una cuenta gratuita en [console.groq.com](https://console.groq.com/), generar una API key, y copiarla a `.env.local` siguiendo [.env.example](.env.example). Reiniciar `npm run dev` después de crearla.
+
+## Base de datos (Supabase)
+
+El esquema SQL para reemplazar `localStorage` por Supabase ya está escrito en
+[supabase/migrations/](supabase/migrations/) — **preparado, todavía sin aplicar**: no
+hay proyecto Supabase creado ni deploy hecho. El README y PRODUCTO.md prometían este
+SQL en "el blueprint, sección 5"; ese documento nunca existió en el repo, así que se
+escribió de cero a partir del modelo de datos real que usa la app hoy.
+
+5 tablas, todas con Row Level Security (`auth.uid() = user_id`):
+
+| Tabla | Reemplaza a | Nota |
+|---|---|---|
+| `lotes` | `ventana.lotes.v1` | Polígono en JSONB, tal cual lo genera Leaflet + Turf. |
+| `aplicaciones` | `ventana.aplicaciones.v1` | `condiciones` guarda el `HourAssessment` completo congelado, en JSONB. |
+| `plan_usuario` | `ventana.plan.v1` | Gratis/premium + `pago_hash` único (evita reactivar Premium dos veces con el mismo comprobante onchain). |
+| `uso_chat_diario` | `ventana.chat.uso.v1` | El límite de 5 consultas/día pasa de ser por dispositivo a ser por cuenta. |
+| `notificaciones_enviadas` | `ventana.notificadas.v1` | Deduplicación de avisos de ventana ya mostrados. |
+
+**El pago onchain no tiene tabla propia**: es sólo el mecanismo para activar Premium
+(mismo criterio que hoy con "Activar Premium (demo)"), no un módulo de facturación —
+`plan_usuario` guarda nada más que el hash, la moneda y la fecha de verificación.
+
+**Convenciones de tiempo preservadas**: las horas de pronóstico dentro del JSONB de
+`condiciones` siguen siendo texto ISO local del lote, nunca `timestamptz` — misma
+regla que el resto de la app (ver "Zonas horarias" arriba). `fecha_siembra` es una
+fecha civil (`date`), sin hora.
+
+Para aplicarlo cuando exista el proyecto:
+
+```bash
+supabase link
+supabase db push
+```
+
+o pegar el archivo entero en el *SQL Editor* de supabase.com/dashboard.
+
+**No implica ningún cambio de código todavía**: `almacen.ts`, `plan.ts` y
+`chat/limite.ts` siguen en `localStorage`. Conectarlos a estas tablas (y agregar el
+login con magic link) es el paso siguiente, contra un proyecto Supabase real.
 
 ## Aviso legal
 

@@ -3,8 +3,9 @@
  *
  * Reemplaza a Supabase para que el MVP funcione sin credenciales ni servicios
  * externos. La interfaz imita lo que después serían las consultas con
- * supabase-js + RLS: cambiar de backend toca sólo este archivo (el SQL ya
- * está en el blueprint, sección 5).
+ * supabase-js + RLS: cambiar de backend toca sólo este archivo. El esquema ya
+ * existe en supabase/migrations/ (tablas + RLS); conectar este archivo a él
+ * es el paso que falta.
  */
 
 import type { Polygon } from "geojson";

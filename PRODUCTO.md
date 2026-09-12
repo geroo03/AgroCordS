@@ -116,7 +116,7 @@ Hay un spec más amplio de 13 módulos agronómicos (monitoreo satelital avanzad
 
 ### Corto plazo (cerrar el MVP como producto)
 1. **Deploy a Vercel** — el build ya pasa; es importar el repo.
-2. **Supabase + magic link + RLS** — el SQL del esquema ya está escrito (blueprint, sección 5); reemplaza `almacen.ts` y da cuentas, multi-dispositivo y autorización en la base.
+2. **Supabase + magic link + RLS** — el esquema SQL ya está escrito (`supabase/migrations/`, ver [Base de datos](README.md#base-de-datos-supabase) en el README); falta crear el proyecto Supabase real, aplicarlo y reemplazar `almacen.ts` (además de `plan.ts` y `chat/limite.ts`) para que hablen con él. Da cuentas, multi-dispositivo y autorización en la base.
 3. **Validación agronómica de umbrales** con un ingeniero agrónomo; ajustar `THRESHOLDS` según su criterio.
 4. **PWA instalable** con caché del último pronóstico: en el campo la señal es intermitente.
 
