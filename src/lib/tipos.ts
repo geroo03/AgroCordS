@@ -10,6 +10,7 @@ export interface Lote {
   id: string;
   nombre: string;
   cultivo: string | null;
+  fechaSiembra: string | null;
   geometry: Polygon;
   centroidLat: number;
   centroidLng: number;

@@ -113,6 +113,9 @@ export default function PaginaDecision() {
           <Link href={`/lotes/${lote.id}/historial`} className="underline">
             Historial
           </Link>
+          <Link href={`/lotes/${lote.id}/agronomico`} className="underline">
+            Agronómico
+          </Link>
         </div>
       </header>
 

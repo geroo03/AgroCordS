@@ -37,6 +37,7 @@ export default function PaginaLotes() {
   const [errorPoligono, setErrorPoligono] = useState<string | null>(null);
   const [nombre, setNombre] = useState("");
   const [cultivo, setCultivo] = useState("");
+  const [fechaSiembra, setFechaSiembra] = useState("");
 
   // Los lotes se leen desde un ref para que `alPoligono` conserve su
   // identidad: si cambiara, el mapa reinicializaría los controles de dibujo.
@@ -67,12 +68,14 @@ export default function PaginaLotes() {
     guardarLote({
       nombre: nombre.trim().slice(0, 80),
       cultivo: cultivo.trim() ? cultivo.trim().slice(0, 40) : null,
+      fechaSiembra: fechaSiembra || null,
       geometry: borrador.geometry,
     });
     setLotes(listarLotes());
     setBorrador(null);
     setNombre("");
     setCultivo("");
+    setFechaSiembra("");
   };
 
   return (
@@ -161,6 +164,12 @@ export default function PaginaLotes() {
               onChange={(e) => setCultivo(e.target.value)}
               placeholder="Ej.: Soja"
               maxLength={40}
+            />
+            <Campo
+              etiqueta="Fecha de siembra (opcional)"
+              type="date"
+              value={fechaSiembra}
+              onChange={(e) => setFechaSiembra(e.target.value)}
             />
             <div className="flex gap-2">
               <Boton onClick={guardar} disabled={nombre.trim().length === 0}>

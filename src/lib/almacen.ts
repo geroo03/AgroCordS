@@ -36,9 +36,9 @@ function escribir<T>(clave: string, valor: T[]): void {
 // ── Lotes ────────────────────────────────────────────────────
 
 export function listarLotes(): Lote[] {
-  return leer<Lote>(CLAVE_LOTES).sort((a, b) =>
-    b.creadoEn.localeCompare(a.creadoEn),
-  );
+  return leer<Lote>(CLAVE_LOTES)
+    .map((lote) => ({ ...lote, fechaSiembra: lote.fechaSiembra ?? null }))
+    .sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
 }
 
 export function obtenerLote(id: string): Lote | null {
@@ -48,6 +48,7 @@ export function obtenerLote(id: string): Lote | null {
 export interface NuevoLote {
   nombre: string;
   cultivo: string | null;
+  fechaSiembra?: string | null;
   geometry: Polygon;
 }
 
@@ -57,6 +58,7 @@ export function guardarLote(datos: NuevoLote): Lote {
     id: crypto.randomUUID(),
     nombre: datos.nombre,
     cultivo: datos.cultivo,
+    fechaSiembra: datos.fechaSiembra ?? null,
     geometry: datos.geometry,
     ...medidas,
     creadoEn: new Date().toISOString(),
