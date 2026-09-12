@@ -26,6 +26,7 @@ import { calcularIndiceAgotamiento } from "@/lib/agronomico";
 import { fetchHistoricoDiario } from "@/lib/historico";
 import { fechaLocalHoy } from "@/lib/formato";
 import { esPremium } from "@/lib/plan";
+import type { EstadoEnso } from "@/lib/enso";
 import type { ObservacionSatelital } from "@/lib/satelital/tipos";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
@@ -45,6 +46,9 @@ export default function PaginaDecision() {
   // El balance hídrico alimenta al diagnóstico. Se guarda junto al id del
   // lote que lo produjo: al abrir otro lote el dato deja de aplicar y la
   // síntesis lo informa como sin datos, en vez de mostrar el del anterior.
+  // El ONI es un índice global y se publica una vez por mes: no depende del
+  // lote y no hace falta volver a pedirlo al cambiar de pantalla.
+  const [enso, setEnso] = useState<EstadoEnso | null>(null);
   const [vigorCargado, setVigorCargado] = useState<{
     loteId: string;
     observaciones: ObservacionSatelital[];
@@ -137,6 +141,20 @@ export default function PaginaDecision() {
     };
   }, [lote]);
 
+  useEffect(() => {
+    let vigente = true;
+    fetch("/api/enso")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((estado: EstadoEnso) => {
+        if (vigente) setEnso(estado);
+      })
+      // Sin ENSO la síntesis informa la categoría como sin datos y lo explica.
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
   // Todos los hooks corren antes de cualquier return: su cantidad no puede
   // cambiar entre renders.
   const datosDelRender = datos;
@@ -169,8 +187,9 @@ export default function PaginaDecision() {
           : [],
         agua,
         vigor,
+        enso,
       }),
-    [cultivo, actualParaSintesis, datosDelRender, agua, vigor],
+    [cultivo, actualParaSintesis, datosDelRender, agua, vigor, enso],
   );
 
   if (lote === "no_encontrado") {

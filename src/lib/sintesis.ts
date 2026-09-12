@@ -24,6 +24,12 @@
  * en evidencia, y por eso es peor que no concluir.
  */
 
+import {
+  ETIQUETA_FASE,
+  ETIQUETA_INTENSIDAD,
+  UMBRALES_ONI,
+  type EstadoEnso,
+} from "./enso";
 import { rumboViento } from "./formato";
 import type { RiesgoHelada } from "./helada";
 import type { ObservacionSatelital } from "./satelital/tipos";
@@ -31,13 +37,19 @@ import type { HourAssessment, SprayWindow } from "./spray-engine";
 
 export type EstadoSintesis = "favorable" | "atencion" | "riesgo" | "sin_datos";
 
-export type CategoriaDecision = "aplicacion" | "agua" | "clima" | "cultivo";
+export type CategoriaDecision =
+  | "aplicacion"
+  | "agua"
+  | "clima"
+  | "cultivo"
+  | "contexto";
 
 export const ETIQUETA_CATEGORIA: Record<CategoriaDecision, string> = {
   aplicacion: "Aplicación",
   agua: "Agua y estrés",
   clima: "Riesgo climático",
   cultivo: "Estado del cultivo",
+  contexto: "Contexto de temporada",
 };
 
 /** Un dato crudo que respalda un hallazgo: la "evidencia" del principio. */
@@ -87,6 +99,8 @@ export interface EntradaSintesis {
   readonly agua: EntradaAgua | null;
   /** `null` cuando no se consultó (sin Premium) o falló el proveedor. */
   readonly vigor: readonly ObservacionSatelital[] | null;
+  /** Fase ENSO vigente. `null` si la NOAA no respondió. */
+  readonly enso: EstadoEnso | null;
 }
 
 // ── Umbrales ─────────────────────────────────────────────────
@@ -122,13 +136,20 @@ const PESO: Record<EstadoSintesis, number> = {
 // ── Entrada principal ────────────────────────────────────────
 
 export function sintetizar(entrada: EntradaSintesis): Diagnostico {
-  const hallazgos = cruzarAguaYVigor(
+  const hallazgos = cruzarAguaYEnso(
+    cruzarAguaYVigor(
     [
       evaluarClima(entrada),
       evaluarAgua(entrada),
       evaluarCultivo(entrada),
       evaluarAplicacion(entrada),
+      // Último a propósito: la ordenación es estable, así que ante el mismo
+      // estado una tendencia de temporada nunca le gana a un riesgo de las
+      // próximas horas.
+      evaluarContexto(entrada),
     ],
+    entrada,
+    ),
     entrada,
   );
 
@@ -459,6 +480,80 @@ function evaluarAplicacion(entrada: EntradaSintesis): Hallazgo {
   };
 }
 
+// ── Contexto de temporada (fase ENSO) ────────────────────────
+
+/**
+ * Traduce la fase ENSO a lo que implica para la región pampeana.
+ *
+ * Es la única categoría que habla de MESES, no de horas, y eso cambia lo que
+ * puede afirmar: describe una tendencia de temporada documentada
+ * estadísticamente, no un pronóstico para este lote ni para esta semana. El
+ * texto lo dice siempre, porque la diferencia entre "tiende a" y "va a" es
+ * justamente la que un productor necesita para no sobrerreaccionar.
+ */
+function evaluarContexto(entrada: EntradaSintesis): Hallazgo {
+  const { enso } = entrada;
+  if (!enso) {
+    return sinDatos(
+      "contexto",
+      "No pudimos consultar el índice climático ENSO de la NOAA.",
+    );
+  }
+
+  const { fase, intensidad, ultima, episodioConfirmado, tendencia } = enso;
+  const evidencia: Evidencia[] = [
+    { etiqueta: "Índice ONI", valor: `${ultima.anomalia.toFixed(2)} °C` },
+    { etiqueta: "Temporada", valor: `${ultima.temporada} ${ultima.anio}` },
+    { etiqueta: "Fase", valor: ETIQUETA_FASE[fase] },
+    { etiqueta: "Fuente", valor: "NOAA Climate Prediction Center" },
+  ];
+
+  if (fase === "neutral") {
+    return {
+      categoria: "contexto",
+      estado: "favorable",
+      titular: "Sin señal climática de temporada",
+      interpretacion: `El índice ONI está en ${ultima.anomalia.toFixed(2)} °C, dentro del rango neutral (±${UMBRALES_ONI.evento}). No hay una tendencia de El Niño ni de La Niña que incline las lluvias de la temporada en un sentido u otro.`,
+      aEvaluar: null,
+      evidencia,
+    };
+  }
+
+  const fuerte =
+    intensidad === "fuerte" || intensidad === "muy_fuerte";
+  const nombre = ETIQUETA_FASE[fase];
+  const grado = intensidad ? ETIQUETA_INTENSIDAD[intensidad] : "";
+  const certeza = episodioConfirmado
+    ? "Es un episodio ya confirmado por la NOAA"
+    : "Todavía no acumula las cinco temporadas que la NOAA pide para declarar el episodio, así que se informa como condiciones presentes";
+  const rumbo =
+    tendencia === "en_aumento"
+      ? " y el índice viene en aumento"
+      : tendencia === "en_descenso"
+        ? " y el índice viene aflojando"
+        : "";
+
+  const efecto =
+    fase === "el_nino"
+      ? "En la región pampeana esta fase se asocia a primaveras y veranos más lluviosos que lo normal: menos probabilidad de déficit hídrico, pero más ventanas de aplicación perdidas por lluvia y más presión de enfermedades."
+      : "En la región pampeana esta fase se asocia a primaveras y veranos más secos que lo normal, con mayor probabilidad de déficit hídrico durante el llenado.";
+
+  return {
+    categoria: "contexto",
+    // Sólo los eventos fuertes cambian cómo se planifica una campaña; uno
+    // débil es información, no algo sobre lo que actuar.
+    estado: fuerte ? "atencion" : "favorable",
+    titular: `Fase ${nombre}${grado ? `, intensidad ${grado}` : ""}`,
+    interpretacion: `El índice ONI está en ${ultima.anomalia.toFixed(2)} °C (${ultima.temporada} ${ultima.anio})${rumbo}. ${certeza}. ${efecto} Es una tendencia estadística de temporada sobre la región, no un pronóstico para este lote ni para esta semana.`,
+    aEvaluar: fuerte
+      ? fase === "el_nino"
+        ? "Conviene evaluar la planificación de aplicaciones con menos ventanas disponibles y un monitoreo sanitario más frecuente."
+        : "Conviene evaluar la estrategia hídrica de la campaña y seguir de cerca el balance del lote."
+      : null,
+    evidencia,
+  };
+}
+
 // ── Señal cruzada: agua + vigor ──────────────────────────────
 
 /**
@@ -495,6 +590,46 @@ function cruzarAguaYVigor(
     evidencia: [...agua.evidencia, ...cultivo.evidencia],
   };
 
+  return hallazgos.map((h) => (h.categoria === "agua" ? reforzado : h));
+}
+
+/**
+ * El balance del lote dice lo que pasó; la fase ENSO, hacia dónde tiende la
+ * temporada. Juntos responden algo que ninguno contesta solo: si el
+ * agotamiento que se ve ahora tiene viento a favor o en contra.
+ *
+ * Sólo se cruza cuando el agua ya venía cediendo. Con reserva cómoda, la
+ * fase se informa por su cuenta y no hay nada que matizar.
+ */
+function cruzarAguaYEnso(
+  hallazgos: readonly Hallazgo[],
+  entrada: EntradaSintesis,
+): Hallazgo[] {
+  const { enso, agua } = entrada;
+  const hallazgoAgua = hallazgos.find((h) => h.categoria === "agua");
+  if (!enso || !agua || !hallazgoAgua || hallazgoAgua.estado === "sin_datos") {
+    return [...hallazgos];
+  }
+  if (enso.fase === "neutral") return [...hallazgos];
+
+  const cediendo =
+    agua.indicePrevio !== null &&
+    agua.indiceHoy - agua.indicePrevio > UMBRALES_SINTESIS.agua.cambioRelevante;
+  if (!cediendo) return [...hallazgos];
+
+  const matiz =
+    enso.fase === "la_nina"
+      ? ` La fase ${ETIQUETA_FASE[enso.fase]} en curso empuja en el mismo sentido: en esta región se asocia a temporadas más secas, así que el agotamiento tiene menos probabilidad de revertirse solo.`
+      : ` La fase ${ETIQUETA_FASE[enso.fase]} en curso empuja en sentido contrario: en esta región se asocia a temporadas más lluviosas, así que el agotamiento tiene más probabilidad de revertirse en las próximas semanas.`;
+
+  const reforzado: Hallazgo = {
+    ...hallazgoAgua,
+    interpretacion: `${hallazgoAgua.interpretacion}${matiz}`,
+    evidencia: [
+      ...hallazgoAgua.evidencia,
+      { etiqueta: "Fase de temporada", valor: ETIQUETA_FASE[enso.fase] },
+    ],
+  };
   return hallazgos.map((h) => (h.categoria === "agua" ? reforzado : h));
 }
 

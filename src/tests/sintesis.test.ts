@@ -66,6 +66,7 @@ const base: EntradaSintesis = {
   helada: heladaTranquila(),
   agua: null,
   vigor: null,
+  enso: null,
 };
 
 const buscar = (hallazgos: readonly Hallazgo[], categoria: string) =>
@@ -80,6 +81,7 @@ describe("sintetizar", () => {
       helada: [],
       agua: null,
       vigor: null,
+      enso: null,
     });
     expect(d.estado).toBe("sin_datos");
     expect(d.hallazgos.every((h) => h.estado === "sin_datos")).toBe(true);

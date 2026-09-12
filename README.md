@@ -18,7 +18,7 @@ npm run dev
 Abrí http://localhost:3000. En la pestaña **Lotes**, "Cargar 3 lotes de ejemplo" crea Marcos Juárez, Río Cuarto y Villa María con pronóstico real, o dibujá un lote propio sobre el mapa satelital.
 
 ```bash
-npm test        # 92 en total: satelital (21) + pagos onchain (18) + síntesis (13) + geo (11) + valor/score (10) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
+npm test        # 105 en total: satelital (21) + pagos onchain (18) + síntesis (15) + geo (11) + ENSO (11) + valor/score (10) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
 npm run build   # build de producción
 ```
 
@@ -93,6 +93,13 @@ Nunca una instrucción de aplicar, sembrar o regar: la decisión agronómica sig
 ### Vigor vegetativo (NDVI/NDRE)
 - Pantalla por lote (`/lotes/[id]/ndvi`) con vigor actual, NDVI/NDRE, fecha de la última observación y cobertura de nubes sobre el lote, más un gráfico con una entrada por pasada satelital y selección de fecha por chips tocables ([componentes](src/components/ndvi/)).
 - **Datos reales de Sentinel-2** (Copernicus Data Space / Sentinel Hub) calculados sobre el polígono completo del lote — ver [Datos satelitales](#datos-satelitales). Sin credenciales, fallback de demostración marcado como tal.
+
+### Contexto de temporada: fase El Niño / La Niña (gratis)
+- Quinta categoría del diagnóstico, alimentada por el **índice ONI de la NOAA** ([enso.ts](src/lib/enso.ts)), de dominio público y sin clave. Clasifica la fase (El Niño / La Niña / Neutral), su intensidad según los umbrales operativos de la NOAA, la tendencia del índice y si el episodio ya está confirmado o son sólo condiciones presentes.
+- **No previene nada, y lo dice**: El Niño es un fenómeno oceánico-atmosférico del Pacífico, de escala global. Lo que aporta el módulo es saber en qué fase está el sistema para anticiparse en vez de reaccionar.
+- **Opera en meses, no en horas.** Nunca entra al motor de pulverización ni modifica el veredicto de una hora: mezclar una tendencia de temporada con una decisión de las próximas 72 h sería un error de categoría. Se evalúa último, así que ante el mismo estado un riesgo agudo —una helada esta noche— siempre le gana.
+- **Cruce con el balance hídrico**, que es donde deja de ser un dato suelto: si el agotamiento del lote viene subiendo, el módulo dice si la fase de temporada empuja en el mismo sentido o en contra. En La Niña el déficit tiene menos probabilidad de revertirse solo; en El Niño, más. Ninguno de los dos datos dice eso por su cuenta.
+- El texto distingue siempre entre asociación estadística sobre una región y pronóstico para un lote — la relación ENSO-lluvia en la pampa está documentada, pero es probabilística.
 
 ### Riesgo de helada (informativo, gratis)
 - Tarjeta en la pantalla del lote ([helada.ts](src/lib/helada.ts)): estima la temperatura del **canopeo**, no la de la garita meteorológica. En noche despejada y calma (nubosidad < 30 %, viento < 8 km/h) el enfriamiento radiativo deja el cultivo unos 3 °C por debajo de la temperatura a 2 m que informa el pronóstico; alertar con el número crudo produce falsos negativos justo cuando más importa.
