@@ -3,18 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import IconoClay from "./IconoClay";
-import {
-  GlifoAjustes,
-  GlifoHistorial,
-  GlifoLotes,
-  GlifoVentanas,
-} from "./iconos/Glifos";
+import { GlifoHistorial, GlifoLotes, GlifoVentanas } from "./iconos/Glifos";
 
 const PESTANAS = [
   { href: "/lotes", etiqueta: "Lotes", Icono: GlifoLotes },
   { href: "/ventanas", etiqueta: "Ventanas", Icono: GlifoVentanas },
   { href: "/historial", etiqueta: "Historial", Icono: GlifoHistorial },
-  { href: "/ajustes", etiqueta: "Ajustes", Icono: GlifoAjustes },
 ] as const;
 
 /**
@@ -31,7 +25,7 @@ export default function BarraNavegacion() {
       aria-label="Secciones"
       className="clay-elevado fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[480px] rounded-t-3xl px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         {PESTANAS.map(({ href, etiqueta, Icono }) => {
           const activa = pathname === href || pathname.startsWith(`${href}/`);
           return (
