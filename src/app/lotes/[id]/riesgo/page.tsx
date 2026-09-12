@@ -34,10 +34,23 @@ export default function PaginaRiesgo() {
   const [premium, setPremium] = useState(false);
 
   useEffect(() => {
-    const encontrado = obtenerLote(params.id) ?? "no_encontrado";
-    setLote(encontrado);
-    if (encontrado !== "no_encontrado") setAplicaciones(listarAplicaciones(encontrado.id));
-    setPremium(esPremium());
+    let vigente = true;
+    obtenerLote(params.id).then((encontrado) => {
+      if (!vigente) return;
+      const resuelto = encontrado ?? "no_encontrado";
+      setLote(resuelto);
+      if (resuelto !== "no_encontrado") {
+        listarAplicaciones(resuelto.id).then((a) => {
+          if (vigente) setAplicaciones(a);
+        });
+      }
+    });
+    esPremium().then((p) => {
+      if (vigente) setPremium(p);
+    });
+    return () => {
+      vigente = false;
+    };
   }, [params.id]);
 
   useEffect(() => {

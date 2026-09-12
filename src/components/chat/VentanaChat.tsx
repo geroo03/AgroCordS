@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import IconoClay from "@/components/ui/IconoClay";
@@ -35,8 +35,22 @@ export default function VentanaChat({ lote, diagnostico, valor, aplicaciones, on
   const [texto, setTexto] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [premium, setPremium] = useState(() => esPremium());
-  const [restantes, setRestantes] = useState(() => consultasRestantesHoy(esPremium()));
+  const [premium, setPremium] = useState(false);
+  const [restantes, setRestantes] = useState(0);
+
+  useEffect(() => {
+    let vigente = true;
+    esPremium().then((p) => {
+      if (!vigente) return;
+      setPremium(p);
+      consultasRestantesHoy(p).then((r) => {
+        if (vigente) setRestantes(r);
+      });
+    });
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   const enviar = (mensajeAEnviar: string) => {
     const pregunta = mensajeAEnviar.trim();
@@ -69,8 +83,9 @@ export default function VentanaChat({ lote, diagnostico, valor, aplicaciones, on
           ...prev,
           { rol: "asistente", texto: respuesta.respuesta, acciones: respuesta.acciones },
         ]);
-        registrarConsultaChat();
-        setRestantes(consultasRestantesHoy(premium));
+        registrarConsultaChat().then(() =>
+          consultasRestantesHoy(premium).then(setRestantes),
+        );
       })
       .catch(() => setError("El asistente no responde en este momento. Reintentá en unos minutos."))
       .finally(() => setCargando(false));

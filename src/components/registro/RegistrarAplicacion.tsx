@@ -31,9 +31,9 @@ export default function RegistrarAplicacion({
 
   const sinProducto = productoNombre.trim().length === 0;
 
-  const registrar = () => {
+  const registrar = async () => {
     if (!condiciones || sinProducto) return;
-    guardarAplicacion({
+    await guardarAplicacion({
       loteId,
       productoNombre: productoNombre.trim().slice(0, 120),
       tipoProducto,

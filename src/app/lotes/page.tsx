@@ -44,7 +44,7 @@ export default function PaginaLotes() {
   const lotesRef = useRef<Lote[]>([]);
 
   useEffect(() => {
-    setLotes(listarLotes());
+    listarLotes().then(setLotes);
   }, []);
 
   useEffect(() => {
@@ -63,15 +63,15 @@ export default function PaginaLotes() {
     setBorrador({ geometry, areaHa: medirPoligono(geometry).areaHa });
   }, []);
 
-  const guardar = () => {
+  const guardar = async () => {
     if (!borrador || nombre.trim().length === 0) return;
-    guardarLote({
+    await guardarLote({
       nombre: nombre.trim().slice(0, 80),
       cultivo: cultivo.trim() ? cultivo.trim().slice(0, 40) : null,
       fechaSiembra: fechaSiembra || null,
       geometry: borrador.geometry,
     });
-    setLotes(listarLotes());
+    setLotes(await listarLotes());
     setBorrador(null);
     setNombre("");
     setCultivo("");
@@ -99,7 +99,7 @@ export default function PaginaLotes() {
             Todavía no cargaste ningún lote. Dibujá el primero sobre el mapa: tocá el
             mapa para marcar los vértices y cerrá el polígono en el primer punto.
           </Vacio>
-          <Boton variante="secundario" onClick={() => setLotes(cargarLotesDemo())}>
+          <Boton variante="secundario" onClick={() => cargarLotesDemo().then(setLotes)}>
             Cargar 3 lotes de ejemplo (Córdoba)
           </Boton>
         </div>

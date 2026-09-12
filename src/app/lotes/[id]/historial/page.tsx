@@ -15,8 +15,16 @@ export default function PaginaHistorial() {
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([]);
 
   useEffect(() => {
-    setLote(obtenerLote(params.id) ?? "no_encontrado");
-    setAplicaciones(listarAplicaciones(params.id));
+    let vigente = true;
+    obtenerLote(params.id).then((l) => {
+      if (vigente) setLote(l ?? "no_encontrado");
+    });
+    listarAplicaciones(params.id).then((a) => {
+      if (vigente) setAplicaciones(a);
+    });
+    return () => {
+      vigente = false;
+    };
   }, [params.id]);
 
   if (lote === "no_encontrado") {

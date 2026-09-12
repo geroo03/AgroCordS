@@ -1,16 +1,30 @@
 /**
- * Persistencia de la demo: localStorage del navegador.
+ * Persistencia de lotes y aplicaciones.
  *
- * Reemplaza a Supabase para que el MVP funcione sin credenciales ni servicios
- * externos. La interfaz imita lo que después serían las consultas con
- * supabase-js + RLS: cambiar de backend toca sólo este archivo. El esquema ya
- * existe en supabase/migrations/ (tablas + RLS); conectar este archivo a él
- * es el paso que falta.
+ * Con sesión de Supabase activa, lee y escribe contra el backend (tabla
+ * `lotes`/`aplicaciones`, ver server/): estas funciones son async de
+ * verdad. Sin sesión ("Seguir sin cuenta", modo local — el único camino que
+ * existía antes de conectar el backend) siguen usando `localStorage`,
+ * envueltas en una Promise para que el resto de la app las llame de una
+ * sola forma sin importar el modo.
+ *
+ * Un fallo de red en modo con sesión (backend caído, sin conexión) degrada a
+ * localStorage como respaldo, en vez de romper la pantalla — mismo criterio
+ * de honestidad y resiliencia que el resto de la app (NDVI, el chat, plan.ts).
  */
 
 import type { Polygon } from "geojson";
+import {
+  crearAplicacionRemota,
+  crearLoteRemoto,
+  listarAplicacionesDeLoteRemoto,
+  listarAplicacionesRemoto,
+  listarLotesRemoto,
+  obtenerLoteRemoto,
+} from "./api/cliente";
 import { medirPoligono } from "./geo";
 import type { HourAssessment, ProductType } from "./spray-engine";
+import { obtenerSesionActual } from "./supabaseClient";
 import type { Aplicacion, Lote } from "./tipos";
 
 const CLAVE_LOTES = "ventana.lotes.v1";
@@ -36,14 +50,30 @@ function escribir<T>(clave: string, valor: T[]): void {
 
 // ── Lotes ────────────────────────────────────────────────────
 
-export function listarLotes(): Lote[] {
+function listarLotesLocal(): Lote[] {
   return leer<Lote>(CLAVE_LOTES)
     .map((lote) => ({ ...lote, fechaSiembra: lote.fechaSiembra ?? null }))
     .sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
 }
 
-export function obtenerLote(id: string): Lote | null {
-  return leer<Lote>(CLAVE_LOTES).find((l) => l.id === id) ?? null;
+export async function listarLotes(): Promise<Lote[]> {
+  const sesion = await obtenerSesionActual();
+  if (!sesion) return listarLotesLocal();
+  try {
+    return await listarLotesRemoto();
+  } catch {
+    return listarLotesLocal();
+  }
+}
+
+export async function obtenerLote(id: string): Promise<Lote | null> {
+  const sesion = await obtenerSesionActual();
+  if (!sesion) return leer<Lote>(CLAVE_LOTES).find((l) => l.id === id) ?? null;
+  try {
+    return await obtenerLoteRemoto(id);
+  } catch {
+    return leer<Lote>(CLAVE_LOTES).find((l) => l.id === id) ?? null;
+  }
 }
 
 export interface NuevoLote {
@@ -53,8 +83,27 @@ export interface NuevoLote {
   geometry: Polygon;
 }
 
-export function guardarLote(datos: NuevoLote): Lote {
+export async function guardarLote(datos: NuevoLote): Promise<Lote> {
+  // Las medidas se calculan siempre acá, en el cliente: el backend las
+  // recibe ya resueltas, no las vuelve a calcular por su cuenta.
   const medidas = medirPoligono(datos.geometry);
+  const sesion = await obtenerSesionActual();
+
+  if (sesion) {
+    try {
+      return await crearLoteRemoto({
+        nombre: datos.nombre,
+        cultivo: datos.cultivo,
+        fechaSiembra: datos.fechaSiembra ?? null,
+        geometry: datos.geometry,
+        ...medidas,
+      });
+    } catch {
+      // Sin red, el alta no se pierde: cae al localStorage de este
+      // dispositivo, igual que en modo local.
+    }
+  }
+
   const lote: Lote = {
     id: crypto.randomUUID(),
     nombre: datos.nombre,
@@ -70,16 +119,36 @@ export function guardarLote(datos: NuevoLote): Lote {
 
 // ── Aplicaciones ─────────────────────────────────────────────
 
-export function listarTodasLasAplicaciones(): Aplicacion[] {
+function listarTodasLasAplicacionesLocal(): Aplicacion[] {
   return leer<Aplicacion>(CLAVE_APLICACIONES).sort((a, b) =>
     b.aplicadaEn.localeCompare(a.aplicadaEn),
   );
 }
 
-export function listarAplicaciones(loteId: string): Aplicacion[] {
+export async function listarTodasLasAplicaciones(): Promise<Aplicacion[]> {
+  const sesion = await obtenerSesionActual();
+  if (!sesion) return listarTodasLasAplicacionesLocal();
+  try {
+    return await listarAplicacionesRemoto();
+  } catch {
+    return listarTodasLasAplicacionesLocal();
+  }
+}
+
+function listarAplicacionesLocal(loteId: string): Aplicacion[] {
   return leer<Aplicacion>(CLAVE_APLICACIONES)
     .filter((a) => a.loteId === loteId)
     .sort((a, b) => b.aplicadaEn.localeCompare(a.aplicadaEn));
+}
+
+export async function listarAplicaciones(loteId: string): Promise<Aplicacion[]> {
+  const sesion = await obtenerSesionActual();
+  if (!sesion) return listarAplicacionesLocal(loteId);
+  try {
+    return await listarAplicacionesDeLoteRemoto(loteId);
+  } catch {
+    return listarAplicacionesLocal(loteId);
+  }
 }
 
 export interface NuevaAplicacion {
@@ -90,16 +159,24 @@ export interface NuevaAplicacion {
   notas: string | null;
 }
 
-export function guardarAplicacion(datos: NuevaAplicacion): Aplicacion {
+export async function guardarAplicacion(datos: NuevaAplicacion): Promise<Aplicacion> {
+  const sesion = await obtenerSesionActual();
+
+  if (sesion) {
+    try {
+      return await crearAplicacionRemota(datos);
+    } catch {
+      // Sin red, el registro no se pierde: cae al localStorage de este
+      // dispositivo, igual que en modo local.
+    }
+  }
+
   const aplicacion: Aplicacion = {
     id: crypto.randomUUID(),
     aplicadaEn: new Date().toISOString(),
     ...datos,
   };
-  escribir(CLAVE_APLICACIONES, [
-    ...leer<Aplicacion>(CLAVE_APLICACIONES),
-    aplicacion,
-  ]);
+  escribir(CLAVE_APLICACIONES, [...leer<Aplicacion>(CLAVE_APLICACIONES), aplicacion]);
   return aplicacion;
 }
 
@@ -143,9 +220,9 @@ function rectangulo(lat: number, lng: number, anchoKm: number, altoKm: number): 
   };
 }
 
-export function cargarLotesDemo(): Lote[] {
+export async function cargarLotesDemo(): Promise<Lote[]> {
   for (const d of DEMOS) {
-    guardarLote({
+    await guardarLote({
       nombre: d.nombre,
       cultivo: d.cultivo,
       fechaSiembra: d.fechaSiembra,

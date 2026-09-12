@@ -31,7 +31,7 @@ import { esPremium } from "@/lib/plan";
 import type { EstadoEnso } from "@/lib/enso";
 import type { ObservacionSatelital } from "@/lib/satelital/tipos";
 import type { ProductType } from "@/lib/spray-engine";
-import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
+import type { Aplicacion, ForecastResponsePayload, Lote } from "@/lib/tipos";
 
 export default function PaginaDecision() {
   const params = useParams<{ id: string }>();
@@ -59,10 +59,28 @@ export default function PaginaDecision() {
     loteId: string;
     datos: EntradaAgua;
   } | null>(null);
+  const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([]);
 
   useEffect(() => {
-    setLote(obtenerLote(params.id) ?? "no_encontrado");
+    let vigente = true;
+    obtenerLote(params.id).then((l) => {
+      if (vigente) setLote(l ?? "no_encontrado");
+    });
+    return () => {
+      vigente = false;
+    };
   }, [params.id]);
+
+  useEffect(() => {
+    if (!lote || lote === "no_encontrado") return;
+    let vigente = true;
+    listarAplicaciones(lote.id).then((a) => {
+      if (vigente) setAplicaciones(a);
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [lote]);
 
   const consultar = useCallback(() => {
     if (!lote || lote === "no_encontrado") return;
@@ -125,19 +143,22 @@ export default function PaginaDecision() {
   useEffect(() => {
     // Sólo con Premium: es la consulta que consume cuota del proveedor. Sin
     // ella la síntesis informa el vigor como sin datos y lo dice.
-    if (!lote || lote === "no_encontrado" || !esPremium()) return;
+    if (!lote || lote === "no_encontrado") return;
     const { id, geometry } = lote;
     let vigente = true;
-    const hasta = fechaLocalHoy();
-    const desde = new Date(Date.now() - 130 * 86_400_000).toISOString().slice(0, 10);
-    fetch(
-      `/api/satellite?polygon=${encodeURIComponent(JSON.stringify(geometry))}&from=${desde}&to=${hasta}`,
-    )
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((serie: { observaciones: ObservacionSatelital[] }) => {
-        if (vigente) setVigorCargado({ loteId: id, observaciones: serie.observaciones });
-      })
-      .catch(() => undefined);
+    esPremium().then((premium) => {
+      if (!premium || !vigente) return;
+      const hasta = fechaLocalHoy();
+      const desde = new Date(Date.now() - 130 * 86_400_000).toISOString().slice(0, 10);
+      fetch(
+        `/api/satellite?polygon=${encodeURIComponent(JSON.stringify(geometry))}&from=${desde}&to=${hasta}`,
+      )
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((serie: { observaciones: ObservacionSatelital[] }) => {
+          if (vigente) setVigorCargado({ loteId: id, observaciones: serie.observaciones });
+        })
+        .catch(() => undefined);
+    });
     return () => {
       vigente = false;
     };
@@ -220,7 +241,6 @@ export default function PaginaDecision() {
   // El asistente del lote reusa este mismo valor y el diagnóstico ya
   // calculado arriba: nunca recalcula nada por su cuenta.
   const valor = datos ? estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa) : null;
-  const aplicaciones = listarAplicaciones(lote.id);
 
   return (
     <div className="px-5 pb-24">

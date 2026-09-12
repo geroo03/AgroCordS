@@ -12,8 +12,14 @@
  * motor y compara contra la hora local, con el mismo patrón de comparación
  * de cadenas ISO locales que usa `/api/forecast` (nunca `new Date()` sobre
  * las horas del pronóstico).
+ *
+ * La deduplicación (para no avisar dos veces la misma ventana) vive en el
+ * backend (tabla `notificaciones_enviadas`) con sesión activa, o en
+ * localStorage sin sesión — mismo criterio que almacen.ts/plan.ts.
  */
 
+import { listarNotificacionesRemoto, registrarNotificacionRemoto } from "./api/cliente";
+import { obtenerSesionActual } from "./supabaseClient";
 import type { SprayWindow } from "./spray-engine";
 import type { Lote } from "./tipos";
 
@@ -47,7 +53,7 @@ export function estaVentanaAbierta(ventana: SprayWindow, horaLocal: string): boo
   return horaLocal >= ventana.startTime && horaLocal <= ventana.endTime;
 }
 
-function yaNotificada(clave: string): boolean {
+function yaNotificadaLocal(clave: string): boolean {
   try {
     const guardadas: string[] = JSON.parse(
       window.localStorage.getItem(CLAVE_NOTIFICADAS) ?? "[]",
@@ -58,7 +64,7 @@ function yaNotificada(clave: string): boolean {
   }
 }
 
-function marcarNotificada(clave: string): void {
+function marcarNotificadaLocal(clave: string): void {
   try {
     const guardadas: string[] = JSON.parse(
       window.localStorage.getItem(CLAVE_NOTIFICADAS) ?? "[]",
@@ -74,17 +80,43 @@ function marcarNotificada(clave: string): void {
  * Si la mejor ventana de un lote está abierta AHORA y todavía no se avisó
  * para ese lote+ventana, dispara una notificación del navegador.
  */
-export function avisarSiVentanaAbierta(lote: Lote, mejorVentana: SprayWindow | null): void {
+export async function avisarSiVentanaAbierta(
+  lote: Lote,
+  mejorVentana: SprayWindow | null,
+): Promise<void> {
   if (!mejorVentana) return;
   if (!permisoDisponible() || Notification.permission !== "granted") return;
   if (!estaVentanaAbierta(mejorVentana, horaLocalIso())) return;
 
   const clave = `${lote.id}·${mejorVentana.startTime}`;
-  if (yaNotificada(clave)) return;
+  const sesion = await obtenerSesionActual();
+
+  if (sesion) {
+    try {
+      const enviadas = await listarNotificacionesRemoto();
+      const yaEnviada = enviadas.some(
+        (n) => n.loteId === lote.id && n.ventanaInicio === mejorVentana.startTime,
+      );
+      if (yaEnviada) return;
+    } catch {
+      // Sin poder confirmar contra el backend, se sigue con el chequeo
+      // local como respaldo — peor caso, se repite un aviso una vez.
+      if (yaNotificadaLocal(clave)) return;
+    }
+  } else if (yaNotificadaLocal(clave)) {
+    return;
+  }
 
   new Notification(`Ventana abierta — ${lote.nombre}`, {
     body: `${mejorVentana.hours} h disponibles · puntaje ${mejorVentana.averageScore}.`,
     tag: clave,
   });
-  marcarNotificada(clave);
+
+  if (sesion) {
+    registrarNotificacionRemoto({ loteId: lote.id, ventanaInicio: mejorVentana.startTime }).catch(
+      () => marcarNotificadaLocal(clave),
+    );
+  } else {
+    marcarNotificadaLocal(clave);
+  }
 }

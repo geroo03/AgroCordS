@@ -19,17 +19,17 @@ interface Props {
 export default function Paywall({ titulo, descripcion, onActivado }: Props) {
   const [activando, setActivando] = useState(false);
 
-  const activar = () => {
+  const activar = async () => {
     setActivando(true);
-    activarPremium();
+    await activarPremium();
     // Pausa breve: se siente una acción, no un truco de UI.
     setTimeout(onActivado, 350);
   };
 
   // El pago onchain verificado activa el mismo flag que el botón de demo —
-  // una vez confirmado en la red, Premium persiste igual en localStorage.
-  const activarPorPago = () => {
-    activarPremium();
+  // una vez confirmado en la red, Premium persiste igual (backend o local).
+  const activarPorPago = async () => {
+    await activarPremium();
     onActivado();
   };
 

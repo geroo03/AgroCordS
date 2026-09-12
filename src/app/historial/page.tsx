@@ -14,8 +14,8 @@ export default function PaginaHistorialGlobal() {
   const [lotes, setLotes] = useState<Map<string, Lote>>(new Map());
 
   useEffect(() => {
-    setAplicaciones(listarTodasLasAplicaciones());
-    setLotes(new Map(listarLotes().map((l) => [l.id, l])));
+    listarTodasLasAplicaciones().then(setAplicaciones);
+    listarLotes().then((ls) => setLotes(new Map(ls.map((l) => [l.id, l]))));
   }, []);
 
   return (

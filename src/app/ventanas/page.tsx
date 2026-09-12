@@ -34,7 +34,7 @@ export default function PaginaVentanas() {
   );
 
   useEffect(() => {
-    setPremium(esPremium());
+    esPremium().then(setPremium);
     setPermiso(permisoActual());
   }, []);
 
@@ -42,8 +42,8 @@ export default function PaginaVentanas() {
     pedirPermiso().then(setPermiso);
   };
 
-  const consultar = useCallback(() => {
-    const lotes = listarLotes();
+  const consultar = useCallback(async () => {
+    const lotes = await listarLotes();
     if (lotes.length === 0) {
       setSinLotes(true);
       setRegistros([]);
@@ -51,7 +51,7 @@ export default function PaginaVentanas() {
     }
     setSinLotes(false);
     setRegistros(null);
-    Promise.all(
+    const resultado = await Promise.all(
       lotes.map(async (lote): Promise<Registro> => {
         try {
           const r = await fetch(
@@ -63,33 +63,32 @@ export default function PaginaVentanas() {
           return { lote, datos: "error" };
         }
       }),
-    ).then((resultado) => {
-      // Primero los lotes con ventana más próxima; los ISO locales ordenan bien.
-      const masProxima = (r: Registro): string | null =>
-        r.datos === "error" || r.datos.windows.length === 0
-          ? null
-          : r.datos.windows.reduce(
-              (min, v) => (v.startTime < min ? v.startTime : min),
-              r.datos.windows[0].startTime,
-            );
-      resultado.sort((a, b) => {
-        const va = masProxima(a);
-        const vb = masProxima(b);
-        if (va === null && vb === null) return 0;
-        if (va === null) return 1;
-        if (vb === null) return -1;
-        return va.localeCompare(vb);
-      });
-      setRegistros(resultado);
-
-      // Premium: avisar del navegador si alguna mejor ventana ya está
-      // abierta ahora y todavía no se avisó para ese lote+ventana.
-      if (esPremium()) {
-        for (const { lote, datos } of resultado) {
-          if (datos !== "error") avisarSiVentanaAbierta(lote, datos.windows[0] ?? null);
-        }
-      }
+    );
+    // Primero los lotes con ventana más próxima; los ISO locales ordenan bien.
+    const masProxima = (r: Registro): string | null =>
+      r.datos === "error" || r.datos.windows.length === 0
+        ? null
+        : r.datos.windows.reduce(
+            (min, v) => (v.startTime < min ? v.startTime : min),
+            r.datos.windows[0].startTime,
+          );
+    resultado.sort((a, b) => {
+      const va = masProxima(a);
+      const vb = masProxima(b);
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return va.localeCompare(vb);
     });
+    setRegistros(resultado);
+
+    // Premium: avisar del navegador si alguna mejor ventana ya está
+    // abierta ahora y todavía no se avisó para ese lote+ventana.
+    if (await esPremium()) {
+      for (const { lote, datos } of resultado) {
+        if (datos !== "error") avisarSiVentanaAbierta(lote, datos.windows[0] ?? null);
+      }
+    }
   }, [tipoProducto]);
 
   useEffect(() => {

@@ -27,7 +27,13 @@ export default function PaginaAgronomica() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLote(obtenerLote(params.id) ?? "no_encontrado");
+    let vigente = true;
+    obtenerLote(params.id).then((l) => {
+      if (vigente) setLote(l ?? "no_encontrado");
+    });
+    return () => {
+      vigente = false;
+    };
   }, [params.id]);
 
   useEffect(() => {

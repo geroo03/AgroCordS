@@ -41,8 +41,16 @@ export default function PaginaNdvi() {
   const [premium, setPremium] = useState(false);
 
   useEffect(() => {
-    setLote(obtenerLote(params.id) ?? "no_encontrado");
-    setPremium(esPremium());
+    let vigente = true;
+    obtenerLote(params.id).then((l) => {
+      if (vigente) setLote(l ?? "no_encontrado");
+    });
+    esPremium().then((p) => {
+      if (vigente) setPremium(p);
+    });
+    return () => {
+      vigente = false;
+    };
   }, [params.id]);
 
   const consultar = useCallback(() => {
