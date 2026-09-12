@@ -20,6 +20,7 @@ import { obtenerLote } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
 import { obtenerPrincipio } from "@/lib/productos";
 import { estimarValorDecision } from "@/lib/riesgo";
+import { evaluarHelada, hayRiesgoHelada } from "@/lib/helada";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
@@ -124,6 +125,7 @@ export default function PaginaDecision() {
       ) : (
         <>
           <Veredicto actual={actual} esAhora={datos.current !== null} />
+          <AlertaHelada horas={datos.hours} cultivo={lote.cultivo} />
           <ValorEconomico
             valor={estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa)}
           />
@@ -183,5 +185,39 @@ export default function PaginaDecision() {
         (CC BY 4.0).
       </footer>
     </div>
+  );
+}
+
+function AlertaHelada({
+  horas,
+  cultivo,
+}: {
+  horas: ForecastResponsePayload["hours"];
+  cultivo: string | null;
+}) {
+  const riesgos = evaluarHelada(
+    horas.map((hora) => hora.conditions),
+    cultivo,
+  );
+  const primera = riesgos.find((riesgo) => riesgo.enRiesgo);
+
+  return (
+    <section className="mt-5 rounded-xl border border-niebla p-4">
+      <h2 className="text-lg font-bold">Riesgo de helada</h2>
+      {hayRiesgoHelada(riesgos) && primera ? (
+        <>
+          <p className="mt-2 font-semibold text-bloqueo">Helada posible en las próximas 72 h</p>
+          <p className="mt-1 text-sm text-tinta/80">
+            {new Date(primera.time).toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short" })}
+          </p>
+          <p className="mt-2 text-sm text-tinta/80">{primera.razon}</p>
+        </>
+      ) : (
+        <p className="mt-2 text-sm text-tinta/80">Sin riesgo de helada detectado en las próximas 72 h.</p>
+      )}
+      <p className="mt-3 text-xs text-tinta/60">
+        Se calcula al abrir esta pantalla; no es un aviso automático en segundo plano.
+      </p>
+    </section>
   );
 }
