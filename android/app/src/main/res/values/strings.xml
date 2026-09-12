@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ventana de Aplicación</string>
+    <string name="title_activity_main">Ventana de Aplicación</string>
+    <string name="package_name">com.agrocords.ventana</string>
+    <string name="custom_url_scheme">com.agrocords.ventana</string>
+</resources>
