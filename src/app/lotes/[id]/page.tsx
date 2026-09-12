@@ -19,7 +19,6 @@ import Vacio from "@/components/ui/Vacio";
 import { obtenerLote } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
 import { kcParaCultivo } from "@/lib/cultivo";
-import { obtenerPrincipio } from "@/lib/productos";
 import { estimarValorDecision } from "@/lib/riesgo";
 import { evaluarHelada } from "@/lib/helada";
 import Diagnostico from "@/components/sintesis/Diagnostico";
@@ -39,8 +38,8 @@ export default function PaginaDecision() {
   const [error, setError] = useState<string | null>(null);
   const [horaSeleccionada, setHoraSeleccionada] = useState<string | null>(null);
   const [producto, setProducto] = useState<SeleccionProducto>({
+    nombre: "",
     principioId: null,
-    comercial: null,
   });
   // El balance hídrico alimenta al diagnóstico. Se guarda junto al id del
   // lote que lo produjo: al abrir otro lote el dato deja de aplicar y la
@@ -248,13 +247,7 @@ export default function PaginaDecision() {
               loteId={lote.id}
               tipoProducto={tipoProducto}
               condiciones={actual}
-              productoSugerido={
-                producto.principioId
-                  ? producto.comercial
-                    ? `${producto.comercial} (${obtenerPrincipio(producto.principioId)?.nombre})`
-                    : (obtenerPrincipio(producto.principioId)?.nombre ?? null)
-                  : null
-              }
+              productoNombre={producto.nombre}
             />
           </div>
         </>
