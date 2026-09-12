@@ -32,7 +32,6 @@
   ],
   "exclude": [
     "node_modules",
-    "agrocords---ventana-de-aplicación",
     "server"
   ]
 }
