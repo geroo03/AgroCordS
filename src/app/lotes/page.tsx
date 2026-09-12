@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import EstadoPunto from "@/components/decision/EstadoPunto";
+import MiniaturaLote from "@/components/mapa/MiniaturaLote";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Vacio from "@/components/ui/Vacio";
@@ -91,10 +92,11 @@ export default function PaginaLotes() {
             <li key={lote.id}>
               <Link
                 href={`/lotes/${lote.id}`}
-                className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-niebla p-4"
+                className="flex min-h-16 items-center gap-3 rounded-xl border border-niebla p-3"
               >
-                <span>
-                  <span className="block text-base font-bold">{lote.nombre}</span>
+                <MiniaturaLote lote={lote} className="h-18 w-18" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-bold">{lote.nombre}</span>
                   <span className="block text-sm text-tinta/70">
                     {lote.cultivo ? `${lote.cultivo} · ` : ""}
                     {hectareas(lote.areaHa)}

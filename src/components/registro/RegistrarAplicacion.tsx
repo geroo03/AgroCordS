@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { guardarAplicacion } from "@/lib/almacen";
 import type { HourAssessment, ProductType } from "@/lib/spray-engine";
 import Boton from "@/components/ui/Boton";
@@ -12,12 +12,23 @@ interface Props {
   tipoProducto: ProductType;
   /** Condiciones del momento; se congelan con el registro. */
   condiciones: HourAssessment | null;
+  /** Producto elegido en el selector en cascada; prellena el campo. */
+  productoSugerido?: string | null;
 }
 
-export default function RegistrarAplicacion({ loteId, tipoProducto, condiciones }: Props) {
+export default function RegistrarAplicacion({
+  loteId,
+  tipoProducto,
+  condiciones,
+  productoSugerido = null,
+}: Props) {
   const [producto, setProducto] = useState("");
   const [notas, setNotas] = useState("");
   const [guardada, setGuardada] = useState(false);
+
+  useEffect(() => {
+    if (productoSugerido) setProducto(productoSugerido);
+  }, [productoSugerido]);
 
   const registrar = () => {
     if (!condiciones || producto.trim().length === 0) return;

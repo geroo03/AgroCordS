@@ -67,6 +67,12 @@ export function guardarLote(datos: NuevoLote): Lote {
 
 // ── Aplicaciones ─────────────────────────────────────────────
 
+export function listarTodasLasAplicaciones(): Aplicacion[] {
+  return leer<Aplicacion>(CLAVE_APLICACIONES).sort((a, b) =>
+    b.aplicadaEn.localeCompare(a.aplicadaEn),
+  );
+}
+
 export function listarAplicaciones(loteId: string): Aplicacion[] {
   return leer<Aplicacion>(CLAVE_APLICACIONES)
     .filter((a) => a.loteId === loteId)

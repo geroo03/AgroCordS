@@ -9,6 +9,10 @@
   --color-aceptable: #2f8c50;
   --color-marginal: #c77a00;
   --color-bloqueo: #b3261e;
+  /* Series del gráfico de NDVI/NDRE: identidad de línea, no estado. Par
+     validado contra daltonismo (ΔE CVD 9.1, ΔE visión normal 19.6). */
+  --color-ndvi: #2a78d6;
+  --color-ndre: #eb6834;
   --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
 }
 
