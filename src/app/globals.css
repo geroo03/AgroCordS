@@ -1,0 +1,172 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tinta: #131b2e;
+  --color-papel: #ffffff;
+  --color-niebla: #e2e7ff;
+  --color-pizarra: #00236f;
+  --color-fondo: #f4f5f7;
+  --color-optima: #1f7a3d;
+  --color-aceptable: #2f8c50;
+  --color-marginal: #c77a00;
+  --color-bloqueo: #b3261e;
+  /* Series del gráfico de NDVI/NDRE: identidad de línea, no estado. Par
+     validado contra daltonismo (ΔE CVD 9.1, ΔE visión normal 19.6). */
+  --color-ndvi: #2a78d6;
+  --color-ndre: #eb6834;
+  --font-sans: var(--font-grotesk), "Space Grotesk", system-ui, sans-serif;
+}
+
+:root {
+  /* Alto reservado para la barra inferior fija (aviso legal + 3 pestañas),
+     con margen. El contenido de cada página usa esta misma variable para su
+     padding-bottom, así nunca queda tapado si la barra cambia de tamaño. */
+  --nav-height: calc(9.75rem + env(safe-area-inset-bottom));
+}
+
+body {
+  color: var(--color-tinta);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 24;
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Neumorfismo "AgroCordS": tarjetas y controles con relieve suave sobre el
+   fondo #eef2f7, pensado para leerse a pleno sol en cabina. */
+.shadow-extruded {
+  box-shadow:
+    -4px -4px 10px rgba(255, 255, 255, 0.9),
+    4px 4px 12px rgba(160, 175, 200, 0.35);
+}
+
+.shadow-extruded-sm {
+  box-shadow:
+    -3px -3px 8px rgba(255, 255, 255, 0.9),
+    3px 3px 8px rgba(160, 175, 200, 0.3);
+}
+
+.shadow-sunken {
+  box-shadow:
+    inset 3px 3px 6px rgba(160, 175, 200, 0.4),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.85);
+}
+
+.neo-input-sunken {
+  background: #f4f6fa;
+  box-shadow:
+    inset 3px 3px 6px rgba(15, 37, 78, 0.12),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  border: 1.5px solid #d8e2ef;
+}
+
+.neo-btn-primary {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f254e 100%);
+  box-shadow:
+    0 10px 20px rgba(15, 37, 78, 0.3),
+    -4px -4px 12px rgba(255, 255, 255, 0.9);
+  transition: all 0.18s ease;
+}
+
+.neo-btn-primary:active {
+  transform: scale(0.985);
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(15, 37, 78, 0.2);
+}
+
+.neo-btn-secondary {
+  background: #ffffff;
+  box-shadow:
+    5px 6px 14px rgba(15, 37, 78, 0.08),
+    -4px -4px 10px rgba(255, 255, 255, 0.95);
+  border: 1px solid #d8e2ef;
+  transition: all 0.18s ease;
+}
+
+.neo-btn-secondary:active {
+  box-shadow:
+    inset 2px 2px 6px rgba(15, 37, 78, 0.1),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.9);
+  transform: scale(0.985);
+}
+
+/* Claymorfismo: insignias circulares con volumen 3D para que el estado o la
+   sección se reconozcan por su forma y color, sin depender de leer texto. */
+.clay-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 9999px;
+}
+
+.clay-token--pizarra {
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #dbe4ff 45%, #6f93f2 100%);
+  box-shadow:
+    inset -3px -3px 6px rgba(15, 37, 78, 0.3),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    4px 5px 10px rgba(160, 175, 200, 0.4);
+}
+
+.clay-token--optima {
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #d7f3de 45%, #4fae72 100%);
+  box-shadow:
+    inset -3px -3px 6px rgba(31, 122, 61, 0.32),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    4px 5px 10px rgba(160, 175, 200, 0.4);
+}
+
+.clay-token--marginal {
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #ffe6bd 45%, #d99a35 100%);
+  box-shadow:
+    inset -3px -3px 6px rgba(199, 122, 0, 0.32),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    4px 5px 10px rgba(160, 175, 200, 0.4);
+}
+
+.clay-token--bloqueo {
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #ffd6cf 45%, #cf5b4d 100%);
+  box-shadow:
+    inset -3px -3px 6px rgba(179, 38, 30, 0.32),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+    4px 5px 10px rgba(160, 175, 200, 0.4);
+}
+
+/* La franja marginal es rayada: el color nunca es el único portador de información. */
+.franja-rayada {
+  background-color: color-mix(in srgb, var(--color-marginal) 30%, white);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-marginal) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
