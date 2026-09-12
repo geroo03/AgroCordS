@@ -1,4 +1,8 @@
-import type { ObservacionSatelital, SerieSatelital } from "@/lib/satelital/tipos";
+import {
+  ETIQUETA_CONFIANZA,
+  type ObservacionSatelital,
+  type SerieSatelital,
+} from "@/lib/satelital/tipos";
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -35,6 +39,12 @@ export default function FuenteDatos({
                 {ultima.coberturaNubesPct !== null ? `${ultima.coberturaNubesPct} %` : "—"}
               </dd>
             </div>
+            {ultima.confianza !== null ? (
+              <div className="col-span-2">
+                <dt className="text-xs text-tinta/60">Respaldo del valor</dt>
+                <dd className="font-semibold">{ETIQUETA_CONFIANZA[ultima.confianza]}</dd>
+              </div>
+            ) : null}
           </dl>
         ) : null}
       </div>

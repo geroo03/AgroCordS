@@ -1,6 +1,6 @@
 "use client";
 
-import type { ObservacionSatelital } from "@/lib/satelital/tipos";
+import { ETIQUETA_CONFIANZA, type ObservacionSatelital } from "@/lib/satelital/tipos";
 
 interface Props {
   serie: readonly ObservacionSatelital[];
@@ -56,12 +56,17 @@ function fechaCorta(iso: string): string {
 export default function SerieNdvi({ serie, seleccionada, onSeleccionar }: Props) {
   if (serie.length === 0) return null;
 
+  // La convención del punto hueco sólo se explica cuando hay alguno: en una
+  // serie sin reservas (o en la de demostración) sería ruido.
+  const hayReservas = serie.some((l) => l.confianza === "baja");
+
   return (
     <section>
       <h2 className="text-lg font-bold">Observaciones disponibles</h2>
       <p className="mt-1 text-xs text-tinta/60">
         Una por pasada del satélite: las fechas no son equidistantes y las nubladas
         se muestran sin valor.
+        {hayReservas ? " El punto hueco marca un valor apoyado en poco lote limpio." : ""}
       </p>
 
       <svg
@@ -111,6 +116,9 @@ export default function SerieNdvi({ serie, seleccionada, onSeleccionar }: Props)
 
         {serie.map((l, i) => {
           const activa = l.fecha === seleccionada;
+          // Punto hueco cuando el valor se apoya en poco lote limpio: la forma
+          // dice lo mismo que la palabra, sin depender del color.
+          const conReserva = l.confianza === "baja";
           const puntos: { valor: number | null; color: string }[] = [
             { valor: l.ndvi, color: "var(--color-ndvi)" },
             { valor: l.ndre, color: "var(--color-ndre)" },
@@ -126,9 +134,9 @@ export default function SerieNdvi({ serie, seleccionada, onSeleccionar }: Props)
                     cx={x}
                     cy={y}
                     r={activa ? 4.5 : 2.5}
-                    fill={color}
-                    stroke={activa ? "var(--color-papel)" : "none"}
-                    strokeWidth={activa ? 2 : 0}
+                    fill={conReserva ? "var(--color-papel)" : color}
+                    stroke={conReserva ? color : activa ? "var(--color-papel)" : "none"}
+                    strokeWidth={conReserva || activa ? 2 : 0}
                   />
                 );
               })}
@@ -151,11 +159,15 @@ export default function SerieNdvi({ serie, seleccionada, onSeleccionar }: Props)
       <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
         {serie.map((l) => {
           const sinDato = l.ndvi === null;
+          const respaldo =
+            l.confianza !== null && l.confianza !== "nula"
+              ? `, ${ETIQUETA_CONFIANZA[l.confianza].toLowerCase()}`
+              : "";
           const etiqueta = sinDato
             ? `${l.fecha}: sin dato confiable, nublado`
             : `${l.fecha}: NDVI ${l.ndvi?.toFixed(2)}, NDRE ${
                 l.ndre !== null ? l.ndre.toFixed(2) : "sin dato"
-              }`;
+              }${respaldo}`;
           return (
             <button
               key={l.fecha}

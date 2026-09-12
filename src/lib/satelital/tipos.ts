@@ -14,6 +14,22 @@
 
 export type FuenteSerieSatelital = "sentinel-2" | "demo";
 
+/**
+ * Cuánto respaldo tiene el valor informado en una fecha, según qué proporción
+ * del lote quedó con píxeles limpios en esa pasada.
+ *
+ * Existe porque el corte binario de `FRACCION_LIMPIA_MINIMA` no alcanza: una
+ * observación con el 51 % del lote limpio y otra con el 99 % se informaban
+ * idénticas, y no lo son. Los umbrales viven en `config.ts` y la derivación,
+ * en `clasificarConfianza`.
+ *
+ *   alta  — prácticamente todo el lote limpio.
+ *   media — mayoría limpia, con nubes o sombras en un sector.
+ *   baja  — apenas por encima del mínimo: el valor se informa, con reserva.
+ *   nula  — por debajo del mínimo; `ndvi`/`ndre` vienen en `null`.
+ */
+export type NivelConfianza = "alta" | "media" | "baja" | "nula";
+
 /** Una observación en una fecha puntual, real o de demostración. */
 export interface ObservacionSatelital {
   /**
@@ -31,6 +47,14 @@ export interface ObservacionSatelital {
    * la informa (demo).
    */
   readonly coberturaNubesPct: number | null;
+  /**
+   * Confianza del valor informado. `null` cuando la fuente no la puede
+   * calcular (demo): en una serie sintética no hay píxeles que contar, y
+   * declarar "alta" sería mentir sobre un dato que no se midió.
+   *
+   * Invariante: `confianza === "nula"` ⟺ `ndvi`/`ndre` son `null`.
+   */
+  readonly confianza: NivelConfianza | null;
 }
 
 export interface SerieSatelital {
@@ -73,3 +97,14 @@ export class ErrorSatelital extends Error {
     this.name = "ErrorSatelital";
   }
 }
+
+/**
+ * Etiquetas para la UI. Viven acá y no en `config.ts` porque este archivo no
+ * toca `process.env` y es el único del módulo que el navegador puede importar.
+ */
+export const ETIQUETA_CONFIANZA: Record<NivelConfianza, string> = {
+  alta: "Confianza alta",
+  media: "Confianza media",
+  baja: "Confianza baja",
+  nula: "Sin dato confiable",
+};

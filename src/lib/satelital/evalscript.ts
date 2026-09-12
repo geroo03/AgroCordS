@@ -12,17 +12,47 @@
  *   NDVI = (B08 − B04) / (B08 + B04)
  *   NDRE = (B08 − B05) / (B08 + B05)
  *
- * Nubes sobre el lote: el píxel se descarta (dataMask final = 0) cuando SCL
- * lo clasifica como sombra de nube (3), nube de probabilidad media (8) o
- * alta (9), o cirro (10). Así Sentinel Hub promedia sólo píxeles limpios, y
- * la proporción de píxeles descartados en cada fecha es la cobertura de
- * nubes/sin-dato SOBRE EL POLÍGONO, no la de la escena completa.
+ * ── Máscara ──────────────────────────────────────────────────
+ * El píxel se descarta (dataMask final = 0) cuando:
+ *
+ * a) SCL lo clasifica en alguna de las clases de `SCL_DESCARTADAS`:
+ *      0  sin dato          — el píxel no existe en la escena.
+ *      1  saturado/defectuoso — reflectancia no utilizable.
+ *      3  sombra de nube    — subestima el NIR y hunde el NDVI.
+ *      8  nube, probabilidad media
+ *      9  nube, probabilidad alta
+ *      10 cirro             — fino, pero altera la relación NIR/rojo.
+ *      11 nieve o hielo     — reflectancia alta en NIR, NDVI sin sentido.
+ *
+ *    Se conservan a propósito, y no por olvido:
+ *      2  sombra proyectada — sobre relieve llano (pampa) es marginal, y
+ *         descartarla cuesta pasadas enteras en lotes con arboledas al borde.
+ *      6  agua              — un lote anegado es información real sobre el
+ *         lote, no un artefacto de la escena.
+ *      7  no clasificado    — descartarlo enmascararía suelo desnudo y
+ *         rastrojo, que son estados legítimos del cultivo.
+ *
+ * b) El índice no da un número utilizable: `B08 + B04` (o `B08 + B05`) es 0,
+ *    o el resultado queda fuera de [-1, 1]. Sin este control un solo píxel
+ *    con suma cero emite NaN, y NaN contamina el promedio de TODA la fecha
+ *    (Sentinel Hub no lo filtra). `indices.ts` ya se protegía de lo mismo en
+ *    TypeScript; acá faltaba.
+ *
+ * Como Sentinel Hub promedia sólo los píxeles que sobreviven, la proporción
+ * de píxeles descartados en cada fecha es la cobertura de nubes/sin-dato
+ * SOBRE EL POLÍGONO, no la de la escena completa.
  *
  * `dataMask` como nombre de output tiene significado especial en la
  * Statistical API: enmascara las estadísticas de los demás outputs.
  */
+
+/** Clases SCL que invalidan el píxel. Documentadas una a una arriba. */
+export const SCL_DESCARTADAS = [0, 1, 3, 8, 9, 10, 11] as const;
+
 export const EVALSCRIPT_NDVI_NDRE = `
 //VERSION=3
+var SCL_DESCARTADAS = ${JSON.stringify([...SCL_DESCARTADAS])};
+
 function setup() {
   return {
     input: [{ bands: ["B04", "B05", "B08", "SCL", "dataMask"] }],
@@ -34,12 +64,24 @@ function setup() {
   };
 }
 
+/** Índice normalizado con guarda de división por cero y de rango. */
+function indiceNormalizado(a, b) {
+  var suma = a + b;
+  if (suma === 0) return null;
+  var valor = (a - b) / suma;
+  if (!isFinite(valor) || valor < -1 || valor > 1) return null;
+  return valor;
+}
+
 function evaluatePixel(sample) {
-  var ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
-  var ndre = (sample.B08 - sample.B05) / (sample.B08 + sample.B05);
-  // SCL: 3 sombra de nube, 8/9 nube media/alta probabilidad, 10 cirro.
-  var nuboso = sample.SCL === 3 || sample.SCL === 8 || sample.SCL === 9 || sample.SCL === 10;
-  var valido = sample.dataMask === 1 && !nuboso ? 1 : 0;
+  var ndvi = indiceNormalizado(sample.B08, sample.B04);
+  var ndre = indiceNormalizado(sample.B08, sample.B05);
+  // SCL es una banda de clasificación a 20 m remuestreada a 10 m. Se redondea
+  // antes de comparar: un valor no entero saldría de la lista de descartadas y
+  // un píxel nublado pasaría como limpio, que es el error caro de los dos.
+  var descartadaPorSCL = SCL_DESCARTADAS.indexOf(Math.round(sample.SCL)) !== -1;
+  var valido =
+    sample.dataMask === 1 && !descartadaPorSCL && ndvi !== null && ndre !== null ? 1 : 0;
   return {
     ndvi: [valido ? ndvi : 0],
     ndre: [valido ? ndre : 0],

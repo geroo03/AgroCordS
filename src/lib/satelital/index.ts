@@ -103,6 +103,14 @@ function serieDemo(parametros: ParametrosSerieSatelital): SerieSatelital {
   const semilla = hashEstable(JSON.stringify(parametros.polygon));
   const observaciones = generarSerieDemo(semilla)
     .filter((l) => l.fecha >= parametros.desde && l.fecha <= parametros.hasta)
-    .map((l) => ({ fecha: l.fecha, ndvi: l.ndvi, ndre: l.ndre, coberturaNubesPct: null }));
+    // `coberturaNubesPct` y `confianza` van en null a propósito: en una serie
+    // sintética no hay píxeles que contar, y cualquier valor sería inventado.
+    .map((l) => ({
+      fecha: l.fecha,
+      ndvi: l.ndvi,
+      ndre: l.ndre,
+      coberturaNubesPct: null,
+      confianza: null,
+    }));
   return { fuente: "demo", real: false, observaciones };
 }
