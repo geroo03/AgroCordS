@@ -21,7 +21,9 @@ describe("agronomico", () => {
   });
 
   it("aplica el techo individualmente", () => {
-    expect(calcularGddAcumulado([dia({ tMaxC: 38, tMinC: 20 })], "maiz")).toBe(20);
+    // tMax 38 se acota al techo de 30 ANTES de promediar: (30+20)/2 - 10 = 15.
+    // Sin acotar daría 19: ese es el error que esta prueba previene.
+    expect(calcularGddAcumulado([dia({ tMaxC: 38, tMinC: 20 })], "maiz")).toBe(15);
   });
 
   it("mantiene bajo el agotamiento con lluvia abundante", () => {

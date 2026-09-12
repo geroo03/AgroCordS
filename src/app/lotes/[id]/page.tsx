@@ -92,7 +92,7 @@ export default function PaginaDecision() {
 
   return (
     <div className="px-5 pb-24">
-      <header className="flex items-center justify-between gap-2 border-b border-niebla py-3">
+      <header className="border-b border-niebla py-3">
         <Link
           href="/lotes"
           className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra"
@@ -103,20 +103,26 @@ export default function PaginaDecision() {
             {lote.nombre} · {hectareas(lote.areaHa)}
           </span>
         </Link>
-        <div className="flex min-h-11 shrink-0 items-center gap-2.5 text-sm font-semibold text-pizarra">
-          <Link href={`/lotes/${lote.id}/ndvi`} className="underline">
+        {/* Segunda fila: con cuatro vistas los enlaces ya no entran al lado del
+            nombre en un teléfono (quedaba truncado a una letra). Se desplazan
+            en horizontal y llegan hasta el borde de la pantalla. */}
+        <nav
+          aria-label="Vistas del lote"
+          className="-mx-5 mt-1 flex gap-4 overflow-x-auto px-5 text-sm font-semibold text-pizarra"
+        >
+          <Link href={`/lotes/${lote.id}/ndvi`} className="flex min-h-11 shrink-0 items-center underline">
             NDVI
           </Link>
-          <Link href={`/lotes/${lote.id}/riesgo`} className="underline">
+          <Link href={`/lotes/${lote.id}/riesgo`} className="flex min-h-11 shrink-0 items-center underline">
             Riesgo
           </Link>
-          <Link href={`/lotes/${lote.id}/historial`} className="underline">
+          <Link href={`/lotes/${lote.id}/historial`} className="flex min-h-11 shrink-0 items-center underline">
             Historial
           </Link>
-          <Link href={`/lotes/${lote.id}/agronomico`} className="underline">
+          <Link href={`/lotes/${lote.id}/agronomico`} className="flex min-h-11 shrink-0 items-center underline">
             Agronómico
           </Link>
-        </div>
+        </nav>
       </header>
 
       {error && !datos ? (

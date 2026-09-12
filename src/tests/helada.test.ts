@@ -23,7 +23,9 @@ describe("evaluarHelada", () => {
   });
 
   it("no ajusta durante el día", () => {
-    expect(evaluarHelada([hora({ isDay: true })], "soja")[0].enRiesgo).toBe(false);
+    // Se comprueba que no se resten los 3 °C nocturnos, no que desaparezca el
+    // riesgo: a -1 °C la soja se daña igual, sea de día o de noche.
+    expect(evaluarHelada([hora({ isDay: true })], "soja")[0].temperaturaCanopeoC).toBe(-1);
   });
 
   it("no ajusta con nubosidad o viento", () => {

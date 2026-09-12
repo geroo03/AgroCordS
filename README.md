@@ -6,23 +6,6 @@ Premium agrega lo que cuesta dar y lo que vale más que la decisión diaria: **a
 
 Premium se puede pagar con una **stablecoin de Twin Finance (ARGt/BRAt) sobre Base**: una interacción onchain real y verificable, no un mock. Ver [Pagos onchain](#pagos-onchain-twin-finance).
 
-## Desarrollo en paralelo (en curso)
-
-Hay 4 paquetes de trabajo repartidos en 4 ramas independientes, pensados para que 3 máquinas/cuentas distintas los tomen en paralelo desde `main` sin pisarse. Cada rama tiene su propio `TAREA.md` en la raíz, autocontenido — no hace falta más contexto que ese archivo para retomarlo en otra máquina.
-
-| Rama | Módulos | Qué toca | Tiempo estimado |
-|---|---|---|---|
-| [`equipo1-nucleo-legal-poligonos`](../../tree/equipo1-nucleo-legal-poligonos) | Corrección de lenguaje legal en el veredicto + validaciones de polígono (auto-intersección, área máxima, solapamiento) | `Veredicto.tsx`, `geo.ts` | ~1-1,5 h |
-| [`equipo2-satelital-m01`](../../tree/equipo2-satelital-m01) | Ajustes de la capa NDVI/NDRE: máscara de nubes, agregación temporal, campo de confianza explícito | `satelital/evalscript.ts`, `satelital/sentinelhub.ts`, `satelital/tipos.ts` | ~45 min-1 h |
-| [`equipo3-helada-m07`](../../tree/equipo3-helada-m07) | Alerta de helada (nuevo): ajuste de temperatura de canopeo en noches radiativas, umbral por cultivo | nuevo `helada.ts`, sección en la pantalla de decisión | ~1,5-2 h |
-| [`equipo3-agronomico-m03-m04`](../../tree/equipo3-agronomico-m03-m04) | Balance hídrico (índice de agotamiento) + grados día acumulados desde la siembra (nuevo) | nuevo `historico.ts`/`agronomico.ts`, campo `fechaSiembra` en `Lote`, pantalla `/lotes/[id]/agronomico` | ~2-2,5 h |
-
-**Para retomar un paquete en otra máquina**: `git fetch && git checkout <rama>`, leé el `TAREA.md` de esa rama, y corré `npm install && npm test` antes de empezar (confirmá 50/50 en verde sobre la base antes de tocar nada). El único punto de fricción entre ramas es una línea de link en el header de `/lotes/[id]/page.tsx` — cada `TAREA.md` explica exactamente dónde agregarla para que el merge final sea trivial.
-
-Quedan **fuera de este reparto** (necesitan infraestructura que el proyecto no tiene hoy — DB, cron, email, un rol de agrónomo revisor, o datos que todavía no existen): notificaciones con backend real, importación/exportación de lotes, predicción de rendimiento y detección de plagas. El detalle de por qué cada uno no entra está en `PRODUCTO.md`.
-
-Esta sección se retira cuando las 4 ramas se integren a `main`.
-
 ## Correr la demo
 
 ```bash
@@ -33,7 +16,7 @@ npm run dev
 Abrí http://localhost:3000. En la pestaña **Lotes**, "Cargar 3 lotes de ejemplo" crea Marcos Juárez, Río Cuarto y Villa María con pronóstico real, o dibujá un lote propio sobre el mapa satelital.
 
 ```bash
-npm test        # motor (8) + satelital (21) + valor/score (10) + notificaciones (2) + pagos onchain (18, RPC mockeado)
+npm test        # 79 en total: motor (8) + satelital (21) + pagos onchain (18) + geo (11) + valor/score (10) + helada (5) + agronómico (4) + notificaciones (2)
 npm run build   # build de producción
 ```
 
@@ -49,7 +32,7 @@ Barra inferior fija de tres secciones ([BarraNavegacion.tsx](src/components/ui/B
 | **Ventanas** ([/ventanas](src/app/ventanas/page.tsx)) | Tablero agregado: las próximas ventanas de aplicación de todos los lotes juntas, ordenadas por la más próxima. |
 | **Historial** ([/historial](src/app/historial/page.tsx)) | Todas las aplicaciones registradas, de todos los lotes, cada una expandible a sus condiciones congeladas. |
 
-Cada lote además tiene su propia pantalla de decisión (`/lotes/[id]`) con tres vistas enlazadas desde el encabezado: **NDVI**, **Riesgo** (el score de manejo) y **Historial** por lote. NDVI y Riesgo son Premium: sin activar, muestran un paywall y no consultan Sentinel Hub — no se gasta cuota del proveedor por curiosidad.
+Cada lote además tiene su propia pantalla de decisión (`/lotes/[id]`) con cuatro vistas enlazadas desde el encabezado: **NDVI**, **Riesgo** (el score de manejo), **Historial** por lote y **Agronómico** (grados día y agotamiento hídrico). NDVI y Riesgo son Premium: sin activar, muestran un paywall y no consultan Sentinel Hub — no se gasta cuota del proveedor por curiosidad.
 
 ## Modelo freemium
 
@@ -89,6 +72,17 @@ Las notificaciones usan la Notification API del navegador ([notificaciones.ts](s
 ### Vigor vegetativo (NDVI/NDRE)
 - Pantalla por lote (`/lotes/[id]/ndvi`) con vigor actual, NDVI/NDRE, fecha de la última observación y cobertura de nubes sobre el lote, más un gráfico con una entrada por pasada satelital y selección de fecha por chips tocables ([componentes](src/components/ndvi/)).
 - **Datos reales de Sentinel-2** (Copernicus Data Space / Sentinel Hub) calculados sobre el polígono completo del lote — ver [Datos satelitales](#datos-satelitales). Sin credenciales, fallback de demostración marcado como tal.
+
+### Riesgo de helada (informativo, gratis)
+- Tarjeta en la pantalla del lote ([helada.ts](src/lib/helada.ts)): estima la temperatura del **canopeo**, no la de la garita meteorológica. En noche despejada y calma (nubosidad < 30 %, viento < 8 km/h) el enfriamiento radiativo deja el cultivo unos 3 °C por debajo de la temperatura a 2 m que informa el pronóstico; alertar con el número crudo produce falsos negativos justo cuando más importa.
+- Umbral por cultivo: trigo −4 °C, soja y maíz 0 °C. Es un umbral genérico, sin ajustar por etapa fenológica: la app no conoce el estadio del lote y lo dice en pantalla.
+- Se calcula al abrir la pantalla y **no es un aviso automático en segundo plano**: sin backend no se puede prometer un aviso a las 3 de la mañana, y la tarjeta lo aclara. No interviene en el veredicto de pulverización — son módulos separados.
+
+### Balance agronómico: grados día y agua (gratis)
+- Pantalla por lote con **grados día acumulados** desde la fecha de siembra (método modificado con techo: maíz y soja base 10 °C / techo 30 °C, trigo 0 °C / 26 °C) y un **índice de agotamiento hídrico** de 0 a 1 por balance de balde con ET0 de FAO-56.
+- Datos reales de la **Archive API de Open-Meteo** ([historico.ts](src/lib/historico.ts)), sin API key, que ya entrega la evapotranspiración calculada.
+- Se informa el índice 0-1 y **nunca milímetros absolutos**: el agua útil depende del suelo de cada lote y la app no tiene ese dato, así que un milimetraje fingiría una precisión que no existe. El supuesto (175 mm a capacidad de campo, Kc fijo) está escrito en la propia pantalla.
+- Sin fecha de siembra cargada, la pantalla la pide en vez de inventar un ciclo. No se construyó la comparación contra el promedio histórico de la zona: necesitaría diez campañas por zona agrupadas.
 
 ### Valor económico y score de manejo (agro → fintech)
 Puente entre lo agronómico y lo financiero ([riesgo.ts](src/lib/riesgo.ts)), construido enteramente sobre datos que la app ya produce — nada nuevo que consultar, nada inventado:
