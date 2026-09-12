@@ -139,7 +139,7 @@ Puente entre lo agronómico y lo financiero ([riesgo.ts](src/lib/riesgo.ts)), co
 
 ## Decisiones de la demo
 
-- **Sin capa de costes ni servicios con registro.** La persistencia es `localStorage` del navegador ([almacen.ts](src/lib/almacen.ts)) en lugar de Supabase, y no hay autenticación. La interfaz del almacén imita las consultas que después harían `supabase-js` + RLS: cambiar de backend toca solo ese archivo. El esquema SQL ya está escrito, ver [Base de datos](#base-de-datos-supabase).
+- **Sin capa de costes ni servicios con registro.** La persistencia es `localStorage` del navegador ([almacen.ts](src/lib/almacen.ts)) en lugar de Supabase, y no hay autenticación. La interfaz del almacén imita las consultas que después harían `supabase-js` + RLS: cambiar de backend toca solo ese archivo. El esquema SQL y el backend que lo consume ya están escritos, ver [Base de datos](#base-de-datos-supabase) y [Backend](#backend-server) — falta conectar la app Next.js a ellos.
 - **Clima**: Open-Meteo, sin API key, con caché de 30 min en el servidor. La API route (`GET /api/forecast?lat&lng&productType`) valida con Zod y devuelve las 72 horas evaluadas más las ventanas.
 - **Motor de decisión** ([spray-engine.ts](src/lib/spray-engine.ts)): funciones puras, umbrales Delta-T de GRDC/BoM adoptados por INTA. Provisto, no modificado. Ídem [openmeteo.ts](src/lib/openmeteo.ts).
 - **Zonas horarias**: las horas del pronóstico son cadenas ISO locales del lote y nunca se convierten a `Date`; la hora "actual" se busca comparando contra la hora local del servidor (en la demo, servidor y lote comparten zona).
@@ -268,9 +268,50 @@ supabase db push
 
 o pegar el archivo entero en el *SQL Editor* de supabase.com/dashboard.
 
-**No implica ningún cambio de código todavía**: `almacen.ts`, `plan.ts` y
-`chat/limite.ts` siguen en `localStorage`. Conectarlos a estas tablas (y agregar el
-login con magic link) es el paso siguiente, contra un proyecto Supabase real.
+**La app Next.js no cambió nada todavía**: `almacen.ts`, `plan.ts` y
+`chat/limite.ts` siguen en `localStorage`, sin tocar. Lo que sí existe ya es el
+backend que habla con estas tablas — ver [Backend](#backend-server) — falta
+conectar la app Next.js a él (login con magic link + cliente HTTP), que queda
+como paso siguiente.
+
+## Backend (`server/`)
+
+Backend Express independiente, en [server/](server/) (proyecto Node aparte, con
+su propio `package.json`), para lo que hoy vive en `localStorage`: lotes,
+aplicaciones, plan premium, uso diario del chat y notificaciones enviadas. Las
+API routes de Next.js (`forecast`, `satellite`, `pagos/verificar`, `chat`,
+`enso`) no se tocan ni se migran — este backend es sólo para esas 5 tablas.
+
+- **Auth por JWT de Supabase, no propia**: el login (magic link) lo dispara el
+  cliente Next.js directo contra la Auth API de Supabase; este servidor sólo
+  verifica el token de cada request (`supabase.auth.getUser`) y saca el
+  `user_id` de ahí — nunca manda el mail.
+- **Usa la service role key a propósito**, bypaseando Row Level Security: el
+  navegador nunca habla directo con Supabase para estas tablas, siempre pasa
+  por acá, así que este servidor filtra manualmente por `user_id` en cada
+  consulta. Las políticas RLS de arriba quedan de respaldo, no como mecanismo
+  principal.
+- **12 rutas** que espejan 1 a 1 las funciones de `almacen.ts`/`plan.ts`/
+  `chat/limite.ts`/`notificaciones.ts` — detalle completo en
+  [server/README.md](server/README.md).
+- **Errores tipados → status HTTP** (401/400/404/409/502), mismo criterio que
+  las API routes de Next.js: nunca un stack trace crudo al cliente.
+- **27 tests sin proyecto Supabase real**: el cliente se inyecta por
+  parámetro, así que los tests le pasan un doble de prueba en vez de mockear
+  el SDK completo (`server/tests/apoyo.ts`).
+- **Sin conectar a la app Next.js todavía**: no hay pantalla de login ni
+  cliente HTTP del lado del navegador — eso es la parte que falta para que
+  `almacen.ts` y compañía dejen de usar `localStorage`.
+
+Correrlo:
+
+```bash
+cd server
+npm install
+cp .env.example .env   # completar SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY
+npm run dev
+npm test                # 27 tests, con Supabase mockeado
+```
 
 ## Aviso legal
 
