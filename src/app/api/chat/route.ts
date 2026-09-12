@@ -5,7 +5,7 @@ import { consultarGroq, GroqNoDisponibleError } from "@/lib/chat/groq";
 const EvidenciaSchema = z.object({ etiqueta: z.string(), valor: z.string() });
 
 const HallazgoSchema = z.object({
-  categoria: z.enum(["aplicacion", "agua", "clima", "cultivo"]),
+  categoria: z.enum(["aplicacion", "agua", "clima", "cultivo", "contexto"]),
   estado: z.enum(["favorable", "atencion", "riesgo", "sin_datos"]),
   titular: z.string(),
   interpretacion: z.string(),
@@ -16,7 +16,7 @@ const HallazgoSchema = z.object({
 const DiagnosticoSchema = z.object({
   estado: z.enum(["favorable", "atencion", "riesgo", "sin_datos"]),
   titular: z.string(),
-  principal: z.enum(["aplicacion", "agua", "clima", "cultivo"]).nullable(),
+  principal: z.enum(["aplicacion", "agua", "clima", "cultivo", "contexto"]).nullable(),
   hallazgos: z.array(HallazgoSchema),
 });
 

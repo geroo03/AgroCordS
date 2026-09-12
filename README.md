@@ -18,7 +18,7 @@ npm run dev
 Abrí http://localhost:3000. En la pestaña **Lotes**, "Cargar 3 lotes de ejemplo" crea Marcos Juárez, Río Cuarto y Villa María con pronóstico real, o dibujá un lote propio sobre el mapa satelital.
 
 ```bash
-npm test        # ver el conteo real al correrlo: satelital + pagos onchain + síntesis + geo + ENSO + valor/score + asistente + motor + helada + agronómico + notificaciones
+npm test        # 122 en total: satelital (21) + pagos onchain (18) + asistente (17) + síntesis (15) + geo (11) + ENSO (11) + valor/score (10) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
 npm run build   # build de producción
 ```
 

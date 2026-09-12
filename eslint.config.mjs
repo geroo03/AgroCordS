@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prototipo Vite aparte (agrocords---ventana-de-aplicación/): tiene sus
+    // propias dependencias y config, no forma parte de esta app Next.js.
+    "agrocords---ventana-de-aplicación/**",
   ]),
 ]);
 
