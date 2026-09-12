@@ -15,7 +15,8 @@ import ValorEconomico from "@/components/decision/ValorEconomico";
 import Cargando from "@/components/ui/Cargando";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
-import { obtenerLote } from "@/lib/almacen";
+import { listarAplicaciones, obtenerLote } from "@/lib/almacen";
+import BotonChat from "@/components/chat/BotonChat";
 import { hectareas } from "@/lib/formato";
 import { kcParaCultivo } from "@/lib/cultivo";
 import { estimarValorDecision } from "@/lib/riesgo";
@@ -215,6 +216,10 @@ export default function PaginaDecision() {
   const seleccionada = datos
     ? (datos.hours.find((h) => h.time === horaSeleccionada) ?? actual)
     : null;
+  // El asistente del lote reusa este mismo valor y el diagnóstico ya
+  // calculado arriba: nunca recalcula nada por su cuenta.
+  const valor = datos ? estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa) : null;
+  const aplicaciones = listarAplicaciones(lote.id);
 
   return (
     <div className="px-5 pb-24">
@@ -260,9 +265,7 @@ export default function PaginaDecision() {
       ) : (
         <>
           <Diagnostico diagnostico={diagnostico} />
-          <ValorEconomico
-            valor={estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa)}
-          />
+          <ValorEconomico valor={valor} />
 
           <SelectorProducto
             tipo={tipoProducto}
@@ -296,6 +299,13 @@ export default function PaginaDecision() {
               productoNombre={producto.nombre}
             />
           </div>
+
+          <BotonChat
+            lote={{ nombre: lote.nombre, cultivo: lote.cultivo, areaHa: lote.areaHa }}
+            diagnostico={diagnostico}
+            valor={valor}
+            aplicaciones={aplicaciones}
+          />
         </>
       )}
 
