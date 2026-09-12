@@ -3,7 +3,7 @@
 import type { Polygon } from "geojson";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import EstadoPunto from "@/components/decision/EstadoPunto";
 import MiniaturaLote from "@/components/mapa/MiniaturaLote";
 import Boton from "@/components/ui/Boton";
@@ -11,7 +11,12 @@ import Campo from "@/components/ui/Campo";
 import Vacio from "@/components/ui/Vacio";
 import { cargarLotesDemo, guardarLote, listarLotes } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
-import { medirPoligono, posicionesLeaflet, validarPoligono } from "@/lib/geo";
+import {
+  medirPoligono,
+  posicionesLeaflet,
+  validarPoligono,
+  validarSolapamiento,
+} from "@/lib/geo";
 import type { Lote } from "@/lib/tipos";
 
 const MapaLote = dynamic(() => import("@/components/mapa/MapaLote"), {
@@ -33,12 +38,21 @@ export default function PaginaLotes() {
   const [nombre, setNombre] = useState("");
   const [cultivo, setCultivo] = useState("");
 
+  // Los lotes se leen desde un ref para que `alPoligono` conserve su
+  // identidad: si cambiara, el mapa reinicializaría los controles de dibujo.
+  const lotesRef = useRef<Lote[]>([]);
+
   useEffect(() => {
     setLotes(listarLotes());
   }, []);
 
+  useEffect(() => {
+    lotesRef.current = lotes ?? [];
+  }, [lotes]);
+
   const alPoligono = useCallback((geometry: Polygon) => {
-    const error = validarPoligono(geometry);
+    const error =
+      validarPoligono(geometry) ?? validarSolapamiento(geometry, lotesRef.current);
     if (error) {
       setErrorPoligono(error);
       setBorrador(null);

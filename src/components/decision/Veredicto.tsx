@@ -44,12 +44,14 @@ export default function Veredicto({ actual, esAhora }: Props) {
     );
   }
 
+  // Describe condiciones, nunca instruye: la decisión de aplicar es del
+  // profesional matriculado (Ley provincial 9164), no de la app.
   const sePuede = actual.suitability === "optima" || actual.suitability === "aceptable";
   const palabra = sePuede
-    ? "Aplicá ahora"
+    ? "Condiciones favorables"
     : actual.suitability === "marginal"
       ? "Al límite"
-      : "No apliques";
+      : "Condiciones no favorables";
   const color = sePuede
     ? "text-optima"
     : actual.suitability === "marginal"

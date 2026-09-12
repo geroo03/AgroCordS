@@ -83,7 +83,7 @@ export default function LineaDeTiempo({ horas, seleccionada, ahora, onSelecciona
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-tinta/70">
         <span className="flex items-center gap-1.5">
           <span className="h-3 w-5 rounded-[2px] bg-optima" aria-hidden />
-          Se puede aplicar
+          Favorable
         </span>
         <span className="flex items-center gap-1.5">
           <span className="franja-rayada h-3 w-5 rounded-[2px]" aria-hidden />

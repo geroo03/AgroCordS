@@ -59,14 +59,14 @@ Las notificaciones usan la Notification API del navegador ([notificaciones.ts](s
 ## Qué hace
 
 ### Decisión de aplicación
-- **Veredicto actual** por lote: "Aplicá ahora" / "Al límite" / "No apliques", con la razón limitante concreta.
+- **Veredicto actual** por lote: "Condiciones favorables" / "Al límite" / "Condiciones no favorables", con la razón limitante concreta. Describe condiciones, nunca instruye aplicar o no: esa decisión es del profesional matriculado (Ley provincial 9164).
 - **Selector de producto en cascada** — Tipo (sistémico/contacto) → Principio activo → Nombre comercial ([SelectorProducto.tsx](src/components/registro/SelectorProducto.tsx)) — con buscador por nombre ([productos.ts](src/lib/productos.ts): ~34 principios activos, ~60 marcas de uso extendido en Argentina). La misma hora puede cambiar de estado porque un producto de contacto necesita más horas sin lluvia (rain-fastness).
 - **Línea de tiempo de 72 h**, una franja por hora, coloreada y con marca de forma redundante (llena / rayada / borde) para daltonismo. Tocar una franja abre el detalle: Delta-T, viento, ráfagas, temperatura, humedad y razones con severidad.
 - **Ventanas recomendadas** (bloques de 2+ h aplicables, ordenadas por puntaje), solo hacia adelante.
 - **Registro de aplicación** que congela el `HourAssessment` del momento como snapshot inmutable, e **historial** por lote y global.
 
 ### Lotes
-- **Alta dibujando un polígono** sobre imagen satelital (Leaflet + Geoman). Centroide y hectáreas con Turf; valida mínimo 4 vértices y 0,5 ha.
+- **Alta dibujando un polígono** sobre imagen satelital (Leaflet + Geoman). Centroide y hectáreas con Turf; valida mínimo 4 vértices, entre 0,5 y 5.000 ha, que el polígono no se cruce a sí mismo y que no se superponga más de un 10% con un lote ya cargado (casi siempre es el mismo lote dibujado dos veces).
 - **Miniatura satelital por lote** ([MiniaturaLote.tsx](src/components/mapa/MiniaturaLote.tsx)): imagen real (Esri World Imagery) con el polígono del lote dibujado encima, en listados, tarjetas de ventanas, historial y encabezados. Si falla la red, queda la silueta del polígono sobre fondo pizarra.
 
 ### Vigor vegetativo (NDVI/NDRE)
