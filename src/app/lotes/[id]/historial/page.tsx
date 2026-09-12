@@ -39,8 +39,8 @@ export default function PaginaHistorial() {
   }
 
   return (
-    <div className="px-5 pb-16">
-      <header className="border-b border-niebla py-3">
+    <div className="px-5 pt-5 pb-16">
+      <header className="clay-elevado flex flex-col gap-4 rounded-2xl p-5">
         <Link
           href={lote ? `/lotes/${lote.id}` : "/lotes"}
           className="flex min-h-11 items-center gap-2 font-semibold text-pizarra"
@@ -48,17 +48,19 @@ export default function PaginaHistorial() {
           <span aria-hidden>←</span>
           <span>{lote ? `${lote.nombre} · ${hectareas(lote.areaHa)}` : "Volver"}</span>
         </Link>
-        <h1 className="text-2xl font-extrabold">Historial de aplicaciones</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-tinta">
+          Historial de aplicaciones
+        </h1>
       </header>
 
-      <div className="mt-4">
+      <div className="mt-5">
         {aplicaciones.length === 0 ? (
           <Vacio>Todavía no registraste aplicaciones en este lote.</Vacio>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {aplicaciones.map((a) => (
               <li key={a.id}>
-                <details className="rounded-xl border border-niebla p-4">
+                <details className="clay-elevado rounded-2xl p-4">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2">
                     <span>
                       <span className="block text-base font-bold">{a.productoNombre}</span>

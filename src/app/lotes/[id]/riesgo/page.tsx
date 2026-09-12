@@ -85,7 +85,7 @@ export default function PaginaRiesgo() {
   if (!lote) {
     return (
       <div className="px-5 py-8">
-        <div className="h-40 animate-pulse rounded-xl bg-niebla" />
+        <div className="clay-hundido h-40 animate-pulse rounded-2xl" />
       </div>
     );
   }
@@ -93,8 +93,8 @@ export default function PaginaRiesgo() {
   const resultado = calcularScoreManejo(aplicaciones, observaciones);
 
   return (
-    <div className="px-5 pb-24">
-      <header className="flex items-center justify-between gap-2 border-b border-niebla py-3">
+    <div className="px-5 pt-5 pb-24">
+      <header className="clay-elevado flex flex-col gap-4 rounded-2xl p-5">
         <Link
           href={`/lotes/${lote.id}`}
           className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra"
@@ -105,14 +105,17 @@ export default function PaginaRiesgo() {
             {lote.nombre} · {hectareas(lote.areaHa)}
           </span>
         </Link>
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-tinta">
+            Score de manejo
+          </h1>
+          <p className="mt-1 text-sm text-tinta/70">
+            Un índice de buenas prácticas a partir de tu historial de aplicaciones y del
+            vigor del lote — el tipo de dato que un seguro paramétrico o una línea de
+            crédito agro usaría para tarificar riesgo.
+          </p>
+        </div>
       </header>
-
-      <h1 className="mt-4 text-2xl font-extrabold">Score de manejo</h1>
-      <p className="mt-1 text-sm text-tinta/70">
-        Un índice de buenas prácticas a partir de tu historial de aplicaciones y del
-        vigor del lote — el tipo de dato que un seguro paramétrico o una línea de
-        crédito agro usaría para tarificar riesgo.
-      </p>
 
       {!premium ? (
         <div className="mt-4">
@@ -124,7 +127,7 @@ export default function PaginaRiesgo() {
         </div>
       ) : (
         <>
-          <p className="mt-2 rounded-lg bg-niebla/60 p-2 text-xs text-tinta/70">
+          <p className="clay-hundido mt-4 rounded-xl p-3 text-xs text-tinta/70">
             <strong>Metodología ilustrativa</strong>, no un modelo actuarial validado.
             Pensado como insumo para una futura integración con seguros o
             financiamiento agro, no como una calificación crediticia ya operativa.
@@ -133,8 +136,8 @@ export default function PaginaRiesgo() {
           <div className="mt-5">
             {cargandoVigor && observaciones.length === 0 ? (
               <div className="space-y-3" aria-busy="true">
-                <div className="h-16 w-24 animate-pulse rounded-lg bg-niebla" />
-                <div className="h-24 animate-pulse rounded-xl bg-niebla" />
+                <div className="clay-hundido h-16 w-24 animate-pulse rounded-xl" />
+                <div className="clay-hundido h-24 animate-pulse rounded-2xl" />
               </div>
             ) : (
               <ScoreManejo resultado={resultado} />

@@ -106,27 +106,28 @@ export default function PaginaNdvi() {
     : null;
 
   return (
-    <div className="px-5 pb-24">
-      <header className="flex items-center justify-between gap-2 border-b border-niebla py-3">
-        <Link
-          href={`/lotes/${lote.id}`}
-          className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra"
-        >
-          <span aria-hidden>←</span>
-          <MiniaturaLote lote={lote} className="h-9 w-9" />
-          <span className="truncate">
-            {lote.nombre} · {hectareas(lote.areaHa)}
-          </span>
-        </Link>
-        <Link
-          href={`/lotes/${lote.id}/historial`}
-          className="flex min-h-11 shrink-0 items-center text-sm font-semibold text-pizarra underline"
-        >
-          Historial
-        </Link>
+    <div className="px-5 pt-5 pb-24">
+      <header className="clay-elevado flex flex-col gap-4 rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href={`/lotes/${lote.id}`}
+            className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra"
+          >
+            <span aria-hidden>←</span>
+            <MiniaturaLote lote={lote} className="h-9 w-9" />
+            <span className="truncate">
+              {lote.nombre} · {hectareas(lote.areaHa)}
+            </span>
+          </Link>
+          <Link
+            href={`/lotes/${lote.id}/historial`}
+            className="flex min-h-11 shrink-0 items-center text-sm font-semibold text-pizarra underline"
+          >
+            Historial
+          </Link>
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-tinta">Vigor vegetativo</h1>
       </header>
-
-      <h1 className="mt-4 text-2xl font-extrabold">Vigor vegetativo</h1>
 
       {!premium ? (
         <div className="mt-4">
@@ -140,9 +141,9 @@ export default function PaginaNdvi() {
       cargando && !serie ? (
         <div className="mt-4 space-y-3" aria-busy="true">
           <p className="text-sm font-semibold text-tinta/60">Consultando Sentinel-2…</p>
-          <div className="h-16 animate-pulse rounded-xl bg-niebla" />
-          <div className="h-24 animate-pulse rounded-xl bg-niebla" />
-          <div className="h-32 animate-pulse rounded-xl bg-niebla" />
+          <div className="clay-hundido h-16 animate-pulse rounded-2xl" />
+          <div className="clay-hundido h-24 animate-pulse rounded-2xl" />
+          <div className="clay-hundido h-32 animate-pulse rounded-2xl" />
         </div>
       ) : error && !serie ? (
         <div className="mt-4">

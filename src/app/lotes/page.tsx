@@ -79,9 +79,9 @@ export default function PaginaLotes() {
   };
 
   return (
-    <div className="px-5 pb-16">
-      <header className="py-5">
-        <h1 className="text-2xl font-extrabold">Tus lotes</h1>
+    <div className="flex flex-col gap-5 px-5 pt-5 pb-16">
+      <header className="clay-elevado rounded-2xl p-5">
+        <h1 className="text-3xl font-extrabold tracking-tight text-tinta">Tus lotes</h1>
         <p className="mt-1 text-base text-tinta/70">
           Elegí un lote para ver si se puede aplicar, o dibujá uno nuevo sobre el mapa.
         </p>
@@ -133,8 +133,8 @@ export default function PaginaLotes() {
         </ul>
       )}
 
-      <section className="mt-6">
-        <h2 className="mb-2 text-lg font-bold">Dibujar un lote nuevo</h2>
+      <section className="clay-elevado rounded-2xl p-4">
+        <h2 className="mb-3 text-xl font-bold text-tinta">Dibujar un lote nuevo</h2>
         <MapaLote
           centro={
             lotes && lotes.length > 0
@@ -191,7 +191,7 @@ export default function PaginaLotes() {
         ) : null}
       </section>
 
-      <footer className="mt-8 text-xs leading-snug text-tinta/60">
+      <footer className="text-xs leading-snug text-tinta/60">
         Datos meteorológicos de{" "}
         <a href="https://open-meteo.com/" target="_blank" rel="noreferrer" className="underline">
           Open-Meteo.com

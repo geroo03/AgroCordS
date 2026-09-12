@@ -19,18 +19,18 @@ export default function PaginaHistorialGlobal() {
   }, []);
 
   return (
-    <div className="px-5 pb-24">
-      <header className="py-5">
-        <h1 className="text-2xl font-extrabold">Historial</h1>
+    <div className="flex flex-col gap-5 px-5 pt-5 pb-24">
+      <header className="clay-elevado rounded-2xl p-5">
+        <h1 className="text-3xl font-extrabold tracking-tight text-tinta">Historial</h1>
         <p className="mt-1 text-base text-tinta/70">
           Todas las aplicaciones registradas, con las condiciones congeladas de cada una.
         </p>
       </header>
 
       {aplicaciones === null ? (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {[0, 1].map((i) => (
-            <li key={i} className="h-20 animate-pulse rounded-xl bg-niebla" />
+            <li key={i} className="clay-hundido h-20 animate-pulse rounded-2xl" />
           ))}
         </ul>
       ) : aplicaciones.length === 0 ? (
@@ -44,12 +44,12 @@ export default function PaginaHistorialGlobal() {
           </Link>
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {aplicaciones.map((a) => {
             const lote = lotes.get(a.loteId) ?? null;
             return (
               <li key={a.id}>
-                <details className="rounded-xl border border-niebla p-3">
+                <details className="clay-elevado rounded-2xl p-4">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3">
                     {lote ? <MiniaturaLote lote={lote} className="h-14 w-14" /> : null}
                     <span className="min-w-0 flex-1">

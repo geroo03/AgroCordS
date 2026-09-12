@@ -96,9 +96,11 @@ export default function PaginaVentanas() {
   }, [consultar]);
 
   return (
-    <div className="px-5 pb-24">
-      <header className="py-5">
-        <h1 className="text-2xl font-extrabold">Ventanas de aplicación</h1>
+    <div className="flex flex-col gap-5 px-5 pt-5 pb-24">
+      <header className="clay-elevado rounded-2xl p-5">
+        <h1 className="text-3xl font-extrabold tracking-tight text-tinta">
+          Ventanas de aplicación
+        </h1>
         <p className="mt-1 text-base text-tinta/70">
           Cuándo se puede aplicar en cada lote, en las próximas 72 h.
         </p>
@@ -107,7 +109,7 @@ export default function PaginaVentanas() {
       <div
         role="group"
         aria-label="Tipo de producto"
-        className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-niebla p-1"
+        className="clay-hundido flex items-center gap-1 rounded-2xl p-1"
       >
         {(["sistemico", "contacto"] as const).map((t) => (
           <button
@@ -115,8 +117,8 @@ export default function PaginaVentanas() {
             type="button"
             aria-pressed={tipoProducto === t}
             onClick={() => setTipoProducto(t)}
-            className={`min-h-11 rounded-lg text-base font-semibold transition-colors duration-200 ${
-              tipoProducto === t ? "bg-pizarra text-white" : "text-tinta"
+            className={`min-h-11 flex-1 rounded-xl text-base font-semibold transition-all active:scale-[0.98] ${
+              tipoProducto === t ? "clay-elevado font-bold text-pizarra" : "text-tinta/70"
             }`}
           >
             {t === "sistemico" ? "Sistémico" : "Contacto"}
@@ -125,19 +127,17 @@ export default function PaginaVentanas() {
       </div>
 
       {!premium ? (
-        <div className="mb-4">
-          <Paywall
-            titulo="🔔 Avisos automáticos — Premium"
-            descripcion="Te avisamos con una notificación apenas se abra la mejor ventana de cada lote, sin tener que entrar a revisar."
-            onActivado={() => setPremium(true)}
-          />
-        </div>
+        <Paywall
+          titulo="🔔 Avisos automáticos — Premium"
+          descripcion="Te avisamos con una notificación apenas se abra la mejor ventana de cada lote, sin tener que entrar a revisar."
+          onActivado={() => setPremium(true)}
+        />
       ) : !permisoDisponible() ? null : permiso === "granted" ? (
-        <p className="mb-4 rounded-lg bg-optima/10 p-2 text-sm font-medium text-optima">
+        <p className="clay-hundido rounded-xl p-3 text-sm font-medium text-optima">
           🔔 Avisos activados: te notificamos apenas se abra una ventana.
         </p>
       ) : (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-niebla p-3">
+        <div className="clay-elevado flex items-center justify-between gap-3 rounded-2xl p-4">
           <p className="text-sm text-tinta/80">
             Activá los avisos del navegador para no tener que entrar a revisar.
           </p>
@@ -155,18 +155,18 @@ export default function PaginaVentanas() {
           </Link>
         </div>
       ) : registros === null ? (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="h-24 animate-pulse rounded-xl bg-niebla" />
+            <li key={i} className="clay-hundido h-24 animate-pulse rounded-2xl" />
           ))}
         </ul>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {registros.map(({ lote, datos }) => (
             <li key={lote.id}>
               <Link
                 href={`/lotes/${lote.id}`}
-                className="flex items-center gap-3 rounded-xl border border-niebla p-3"
+                className="clay-elevado flex items-center gap-3 rounded-2xl p-4 transition-transform active:scale-[0.98]"
               >
                 <MiniaturaLote lote={lote} className="h-16 w-16" />
                 <span className="min-w-0 flex-1">
@@ -204,12 +204,10 @@ export default function PaginaVentanas() {
       )}
 
       {registros !== null && registros.some((r) => r.datos === "error") ? (
-        <div className="mt-4">
-          <ErrorEstado
-            mensaje="No pudimos traer el pronóstico de algunos lotes."
-            onReintentar={consultar}
-          />
-        </div>
+        <ErrorEstado
+          mensaje="No pudimos traer el pronóstico de algunos lotes."
+          onReintentar={consultar}
+        />
       ) : null}
     </div>
   );

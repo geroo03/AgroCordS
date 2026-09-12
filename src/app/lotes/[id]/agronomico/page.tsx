@@ -70,26 +70,27 @@ export default function PaginaAgronomica() {
   if (!lote) return <Cargando />;
 
   return (
-    <div className="px-5 pb-24">
-      <header className="flex items-center justify-between gap-2 border-b border-niebla py-3">
-        <Link href={`/lotes/${lote.id}`} className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra">
-          <span aria-hidden>←</span>
-          <MiniaturaLote lote={lote} className="h-9 w-9" />
-          <span className="truncate">{lote.nombre} · {hectareas(lote.areaHa)}</span>
-        </Link>
-        <Link href={`/lotes/${lote.id}`} className="shrink-0 text-sm font-semibold underline">
-          Volver
-        </Link>
-      </header>
-
-      <main className="space-y-5 py-6">
+    <div className="px-5 pt-5 pb-24">
+      <header className="clay-elevado flex flex-col gap-4 rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-2">
+          <Link href={`/lotes/${lote.id}`} className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra">
+            <span aria-hidden>←</span>
+            <MiniaturaLote lote={lote} className="h-9 w-9" />
+            <span className="truncate">{lote.nombre} · {hectareas(lote.areaHa)}</span>
+          </Link>
+          <Link href={`/lotes/${lote.id}`} className="shrink-0 text-sm font-semibold text-pizarra underline">
+            Volver
+          </Link>
+        </div>
         <div>
-          <h1 className="text-2xl font-extrabold">Balance agronómico</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-tinta">Balance agronómico</h1>
           <p className="mt-1 text-base text-tinta/70">
             Acumulado desde el {lote.fechaSiembra ?? "inicio"} con datos históricos de Open-Meteo.
           </p>
         </div>
+      </header>
 
+      <main className="space-y-5 py-6">
         {!lote.fechaSiembra ? (
           <>
             <Vacio>
@@ -105,14 +106,14 @@ export default function PaginaAgronomica() {
           <ErrorEstado mensaje={error} onReintentar={() => window.location.reload()} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            <section className="rounded-xl border border-niebla p-4">
+            <section className="clay-elevado rounded-2xl p-4">
               <p className="text-sm font-semibold text-tinta/70">Grados día acumulados</p>
-              <p className="mt-2 text-4xl font-extrabold">{gdd?.toFixed(1) ?? "-"}</p>
+              <p className="mt-2 text-4xl font-extrabold text-tinta">{gdd?.toFixed(1) ?? "-"}</p>
               <p className="mt-2 text-sm text-tinta/70">Método modificado con techo por cultivo.</p>
             </section>
-            <section className="rounded-xl border border-niebla p-4">
+            <section className="clay-elevado rounded-2xl p-4">
               <p className="text-sm font-semibold text-tinta/70">Índice de agotamiento</p>
-              <p className="mt-2 text-4xl font-extrabold">{agotamiento?.toFixed(2) ?? "-"}</p>
+              <p className="mt-2 text-4xl font-extrabold text-tinta">{agotamiento?.toFixed(2) ?? "-"}</p>
               <div className="mt-3 h-3 overflow-hidden rounded-full bg-niebla">
                 <div className="h-full bg-pizarra" style={{ width: `${(agotamiento ?? 0) * 100}%` }} />
               </div>
