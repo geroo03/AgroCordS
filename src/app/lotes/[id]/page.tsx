@@ -12,12 +12,14 @@ import RegistrarAplicacion from "@/components/registro/RegistrarAplicacion";
 import SelectorProducto, {
   type SeleccionProducto,
 } from "@/components/registro/SelectorProducto";
+import ValorEconomico from "@/components/decision/ValorEconomico";
 import Cargando from "@/components/ui/Cargando";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
 import { obtenerLote } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
 import { obtenerPrincipio } from "@/lib/productos";
+import { estimarValorDecision } from "@/lib/riesgo";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
@@ -100,9 +102,12 @@ export default function PaginaDecision() {
             {lote.nombre} · {hectareas(lote.areaHa)}
           </span>
         </Link>
-        <div className="flex min-h-11 shrink-0 items-center gap-3 text-sm font-semibold text-pizarra">
+        <div className="flex min-h-11 shrink-0 items-center gap-2.5 text-sm font-semibold text-pizarra">
           <Link href={`/lotes/${lote.id}/ndvi`} className="underline">
             NDVI
+          </Link>
+          <Link href={`/lotes/${lote.id}/riesgo`} className="underline">
+            Riesgo
           </Link>
           <Link href={`/lotes/${lote.id}/historial`} className="underline">
             Historial
@@ -119,6 +124,9 @@ export default function PaginaDecision() {
       ) : (
         <>
           <Veredicto actual={actual} esAhora={datos.current !== null} />
+          <ValorEconomico
+            valor={estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa)}
+          />
 
           <SelectorProducto
             tipo={tipoProducto}

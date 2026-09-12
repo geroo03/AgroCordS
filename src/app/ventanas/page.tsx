@@ -3,10 +3,19 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import MiniaturaLote from "@/components/mapa/MiniaturaLote";
+import Boton from "@/components/ui/Boton";
 import ErrorEstado from "@/components/ui/ErrorEstado";
+import Paywall from "@/components/ui/Paywall";
 import Vacio from "@/components/ui/Vacio";
 import { listarLotes } from "@/lib/almacen";
 import { ETIQUETA_ESTADO, etiquetaDia, hectareas, horaCorta } from "@/lib/formato";
+import {
+  avisarSiVentanaAbierta,
+  pedirPermiso,
+  permisoActual,
+  permisoDisponible,
+} from "@/lib/notificaciones";
+import { esPremium } from "@/lib/plan";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
@@ -19,6 +28,19 @@ export default function PaginaVentanas() {
   const [tipoProducto, setTipoProducto] = useState<ProductType>("sistemico");
   const [registros, setRegistros] = useState<Registro[] | null>(null);
   const [sinLotes, setSinLotes] = useState(false);
+  const [premium, setPremium] = useState(false);
+  const [permiso, setPermiso] = useState<NotificationPermission | "no_disponible">(
+    "no_disponible",
+  );
+
+  useEffect(() => {
+    setPremium(esPremium());
+    setPermiso(permisoActual());
+  }, []);
+
+  const activarAvisos = () => {
+    pedirPermiso().then(setPermiso);
+  };
 
   const consultar = useCallback(() => {
     const lotes = listarLotes();
@@ -59,6 +81,14 @@ export default function PaginaVentanas() {
         return va.localeCompare(vb);
       });
       setRegistros(resultado);
+
+      // Premium: avisar del navegador si alguna mejor ventana ya está
+      // abierta ahora y todavía no se avisó para ese lote+ventana.
+      if (esPremium()) {
+        for (const { lote, datos } of resultado) {
+          if (datos !== "error") avisarSiVentanaAbierta(lote, datos.windows[0] ?? null);
+        }
+      }
     });
   }, [tipoProducto]);
 
@@ -94,6 +124,29 @@ export default function PaginaVentanas() {
           </button>
         ))}
       </div>
+
+      {!premium ? (
+        <div className="mb-4">
+          <Paywall
+            titulo="🔔 Avisos automáticos — Premium"
+            descripcion="Te avisamos con una notificación apenas se abra la mejor ventana de cada lote, sin tener que entrar a revisar."
+            onActivado={() => setPremium(true)}
+          />
+        </div>
+      ) : !permisoDisponible() ? null : permiso === "granted" ? (
+        <p className="mb-4 rounded-lg bg-optima/10 p-2 text-sm font-medium text-optima">
+          🔔 Avisos activados: te notificamos apenas se abra una ventana.
+        </p>
+      ) : (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-niebla p-3">
+          <p className="text-sm text-tinta/80">
+            Activá los avisos del navegador para no tener que entrar a revisar.
+          </p>
+          <Boton variante="secundario" onClick={activarAvisos} className="shrink-0">
+            Activar avisos
+          </Boton>
+        </div>
+      )}
 
       {sinLotes ? (
         <div className="space-y-3">

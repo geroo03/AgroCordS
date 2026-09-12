@@ -9,10 +9,12 @@ import FuenteDatos from "@/components/ndvi/FuenteDatos";
 import SerieNdvi from "@/components/ndvi/SerieNdvi";
 import MiniaturaLote from "@/components/mapa/MiniaturaLote";
 import ErrorEstado from "@/components/ui/ErrorEstado";
+import Paywall from "@/components/ui/Paywall";
 import Vacio from "@/components/ui/Vacio";
 import { obtenerLote } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
 import { ultimaLectura } from "@/lib/ndvi";
+import { esPremium } from "@/lib/plan";
 import type { SerieSatelital } from "@/lib/satelital/tipos";
 import type { Lote } from "@/lib/tipos";
 
@@ -36,13 +38,15 @@ export default function PaginaNdvi() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
+  const [premium, setPremium] = useState(false);
 
   useEffect(() => {
     setLote(obtenerLote(params.id) ?? "no_encontrado");
+    setPremium(esPremium());
   }, [params.id]);
 
   const consultar = useCallback(() => {
-    if (!lote || lote === "no_encontrado") return;
+    if (!lote || lote === "no_encontrado" || !premium) return;
     setCargando(true);
     setError(null);
     const { desde, hasta } = rangoFechas();
@@ -63,7 +67,7 @@ export default function PaginaNdvi() {
       })
       .catch(() => setError("No pudimos obtener datos satelitales."))
       .finally(() => setCargando(false));
-  }, [lote]);
+  }, [lote, premium]);
 
   useEffect(() => {
     consultar();
@@ -116,8 +120,16 @@ export default function PaginaNdvi() {
 
       <h1 className="mt-4 text-2xl font-extrabold">Vigor vegetativo</h1>
 
-      {/* Sólo este módulo muestra carga: el encabezado y la navegación siguen usables. */}
-      {cargando && !serie ? (
+      {!premium ? (
+        <div className="mt-4">
+          <Paywall
+            titulo="Vigor satelital — Premium"
+            descripcion="NDVI y NDRE reales desde Sentinel-2 sobre el polígono de este lote, con fecha de observación y cobertura de nubes."
+            onActivado={() => setPremium(true)}
+          />
+        </div>
+      ) : /* Sólo este módulo muestra carga: el encabezado y la navegación siguen usables. */
+      cargando && !serie ? (
         <div className="mt-4 space-y-3" aria-busy="true">
           <p className="text-sm font-semibold text-tinta/60">Consultando Sentinel-2…</p>
           <div className="h-16 animate-pulse rounded-xl bg-niebla" />
