@@ -16,7 +16,7 @@
 
 import type { Polygon } from "geojson";
 import { medirPoligono } from "../geo";
-import { FRACCION_LIMPIA_MINIMA, type CredencialesSentinelHub } from "./config";
+import { clasificarConfianza, FRACCION_LIMPIA_MINIMA, type CredencialesSentinelHub } from "./config";
 import { EVALSCRIPT_NDVI_NDRE } from "./evalscript";
 import { ErrorSatelital, type ObservacionSatelital } from "./tipos";
 
@@ -27,6 +27,20 @@ const MARGEN_EXPIRACION_MS = 60_000;
 /** Resolución objetivo en metros (la nativa de B04/B08). */
 const RESOLUCION_M = 10;
 const METROS_POR_GRADO = 111_320;
+
+/**
+ * Agregación temporal: un intervalo por día (ISO 8601 `P1D`).
+ *
+ * Es la unidad más fina que la Statistical API acepta y la única que preserva
+ * el compromiso del módulo de no interpolar: cada intervalo cae dentro de una
+ * sola fecha de adquisición, así que ningún valor mezcla dos pasadas
+ * separadas en el tiempo. Un intervalo más largo (P5D, P1M) promediaría
+ * pasadas de días distintos y devolvería una fecha que no corresponde a
+ * ninguna adquisición real — exactamente el dato inventado que la UI promete
+ * no mostrar. Sentinel Hub omite los días sin pasada, así que P1D no infla
+ * la respuesta con huecos.
+ */
+const INTERVALO_AGREGACION = "P1D";
 
 // ── OAuth2 ───────────────────────────────────────────────────
 
@@ -131,8 +145,8 @@ export async function consultarEstadisticasSentinelHub(
     },
     aggregation: {
       timeRange: rango,
-      // Un intervalo por día: Sentinel Hub devuelve sólo los días con pasada.
-      aggregationInterval: { of: "P1D" },
+      // Ver `INTERVALO_AGREGACION`: un intervalo por día, nunca más largo.
+      aggregationInterval: { of: INTERVALO_AGREGACION },
       evalscript: EVALSCRIPT_NDVI_NDRE,
       resx,
       resy,
@@ -230,6 +244,17 @@ function fraccionDelBbox(polygon: Polygon): number {
 
 // ── Normalización de la respuesta ────────────────────────────
 
+/** Lo que aporta un intervalo crudo antes de fusionar por fecha. */
+interface AporteIntervalo {
+  /** Píxeles del bbox en el intervalo (`sampleCount`). */
+  muestras: number;
+  /** Píxeles que sobrevivieron la máscara (`sampleCount − noDataCount`). */
+  validos: number;
+  /** Media sobre los píxeles válidos, o `null` si la API no la informó. */
+  ndvi: number | null;
+  ndre: number | null;
+}
+
 /**
  * Traduce la respuesta cruda de la Statistical API al dominio.
  *
@@ -243,7 +268,11 @@ function fraccionDelBbox(polygon: Polygon): number {
  * Reglas:
  * - Un intervalo sin muestras o sin outputs no representa una pasada: se OMITE.
  *   Nunca se inventa una lectura para rellenar el calendario.
- * - Un intervalo con pasada pero con pocos píxeles limpios sobre el lote
+ * - Varios intervalos que caen en la MISMA fecha se fusionan en una sola
+ *   observación (ver `fusionarPorFecha`). Pasa cuando el lote queda sobre el
+ *   solape de dos órbitas adyacentes, o partido entre dos tiles: el satélite
+ *   pasó una vez ese día y la serie debe tener un punto, no dos.
+ * - Una fecha con pasada pero con pocos píxeles limpios sobre el lote
  *   (`FRACCION_LIMPIA_MINIMA`) se conserva con `ndvi`/`ndre` en null: hubo
  *   satélite, no hubo dato confiable.
  */
@@ -252,7 +281,7 @@ export function parsearRespuestaEstadisticas(
   fraccionLoteEnBbox: number,
 ): ObservacionSatelital[] {
   const intervalos = extraerArreglo(json, ["data"]);
-  const observaciones: ObservacionSatelital[] = [];
+  const porFecha = new Map<string, AporteIntervalo[]>();
 
   for (const intervalo of intervalos) {
     const fecha = extraerTexto(intervalo, ["interval", "from"])?.slice(0, 10);
@@ -262,22 +291,67 @@ export function parsearRespuestaEstadisticas(
     if (muestras === null || muestras <= 0) continue;
 
     const sinDato = extraerNumero(intervalo, ["outputs", "ndvi", "bands", "B0", "stats", "noDataCount"]) ?? 0;
-    const fraccionValidaBbox = Math.max(0, muestras - sinDato) / muestras;
-    const fraccionLimpiaLote = Math.min(1, fraccionValidaBbox / Math.max(fraccionLoteEnBbox, 1e-6));
-    const coberturaNubesPct = Math.round((1 - fraccionLimpiaLote) * 100);
-    const confiable = fraccionLimpiaLote >= FRACCION_LIMPIA_MINIMA;
-
-    const ndvi = confiable
-      ? redondear(extraerNumero(intervalo, ["outputs", "ndvi", "bands", "B0", "stats", "mean"]))
-      : null;
-    const ndre = confiable
-      ? redondear(extraerNumero(intervalo, ["outputs", "ndre", "bands", "B0", "stats", "mean"]))
-      : null;
-
-    observaciones.push({ fecha, ndvi, ndre, coberturaNubesPct });
+    const aporte: AporteIntervalo = {
+      muestras,
+      validos: Math.max(0, muestras - sinDato),
+      ndvi: extraerNumero(intervalo, ["outputs", "ndvi", "bands", "B0", "stats", "mean"]),
+      ndre: extraerNumero(intervalo, ["outputs", "ndre", "bands", "B0", "stats", "mean"]),
+    };
+    const acumulado = porFecha.get(fecha);
+    if (acumulado) acumulado.push(aporte);
+    else porFecha.set(fecha, [aporte]);
   }
 
-  return observaciones.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  return [...porFecha.entries()]
+    .map(([fecha, aportes]) => fusionarPorFecha(fecha, aportes, fraccionLoteEnBbox))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/**
+ * Combina los aportes de una misma fecha en una observación.
+ *
+ * Las medias se promedian PONDERADAS por la cantidad de píxeles válidos de
+ * cada aporte, no de forma simple: la media que devuelve Sentinel Hub ya es
+ * un promedio sobre sus píxeles válidos, y un tile que aporta 900 píxeles
+ * limpios debe pesar más que uno que aporta 100. Promediar las medias sin
+ * ponderar daría un valor que no es el promedio del lote.
+ */
+function fusionarPorFecha(
+  fecha: string,
+  aportes: readonly AporteIntervalo[],
+  fraccionLoteEnBbox: number,
+): ObservacionSatelital {
+  const muestras = aportes.reduce((total, a) => total + a.muestras, 0);
+  const validos = aportes.reduce((total, a) => total + a.validos, 0);
+
+  const fraccionValidaBbox = muestras > 0 ? validos / muestras : 0;
+  const fraccionLimpiaLote = Math.min(1, fraccionValidaBbox / Math.max(fraccionLoteEnBbox, 1e-6));
+  const coberturaNubesPct = Math.round((1 - fraccionLimpiaLote) * 100);
+  const confiable = fraccionLimpiaLote >= FRACCION_LIMPIA_MINIMA;
+
+  return {
+    fecha,
+    ndvi: confiable ? redondear(mediaPonderada(aportes, "ndvi")) : null,
+    ndre: confiable ? redondear(mediaPonderada(aportes, "ndre")) : null,
+    coberturaNubesPct,
+    confianza: clasificarConfianza(fraccionLimpiaLote),
+  };
+}
+
+/** Media de un índice ponderada por píxeles válidos. `null` si no hay peso. */
+function mediaPonderada(
+  aportes: readonly AporteIntervalo[],
+  campo: "ndvi" | "ndre",
+): number | null {
+  let suma = 0;
+  let peso = 0;
+  for (const aporte of aportes) {
+    const valor = aporte[campo];
+    if (valor === null || aporte.validos <= 0) continue;
+    suma += valor * aporte.validos;
+    peso += aporte.validos;
+  }
+  return peso > 0 ? suma / peso : null;
 }
 
 function navegar(obj: unknown, ruta: readonly string[]): unknown {

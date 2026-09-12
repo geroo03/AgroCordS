@@ -38,7 +38,13 @@ function aplicacion(suitability: Suitability): Aplicacion {
 }
 
 function observacion(fecha: string, ndvi: number | null): ObservacionSatelital {
-  return { fecha, ndvi, ndre: ndvi !== null ? ndvi * 0.5 : null, coberturaNubesPct: 0 };
+  return {
+    fecha,
+    ndvi,
+    ndre: ndvi !== null ? ndvi * 0.5 : null,
+    coberturaNubesPct: 0,
+    confianza: ndvi !== null ? "alta" : "nula",
+  };
 }
 
 describe("estimarValorDecision", () => {

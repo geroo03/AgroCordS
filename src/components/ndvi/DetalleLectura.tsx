@@ -1,5 +1,5 @@
 import { clasificarVigor, ETIQUETA_VIGOR } from "@/lib/ndvi";
-import type { ObservacionSatelital } from "@/lib/satelital/tipos";
+import { ETIQUETA_CONFIANZA, type ObservacionSatelital } from "@/lib/satelital/tipos";
 
 export default function DetalleLectura({ lectura }: { lectura: ObservacionSatelital }) {
   if (lectura.ndvi === null) {
@@ -44,6 +44,15 @@ export default function DetalleLectura({ lectura }: { lectura: ObservacionSateli
           </dd>
         </div>
       </dl>
+      {lectura.confianza === "baja" || lectura.confianza === "media" ? (
+        <p className="mt-3 rounded-lg border border-dashed border-niebla p-2 text-sm text-tinta/70">
+          {ETIQUETA_CONFIANZA[lectura.confianza]}: parte del lote quedó con nubes o
+          sombra en esta pasada
+          {lectura.coberturaNubesPct !== null ? ` (${lectura.coberturaNubesPct} %)` : ""}, así
+          que el valor sale de los píxeles limpios restantes y no del lote entero.
+        </p>
+      ) : null}
+
       <p className="mt-3 text-base">
         {brechaAlta
           ? "NDRE bajo en relación al NDVI: en etapas avanzadas puede señalar estrés que el NDVI todavía no muestra por estar saturado."

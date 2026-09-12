@@ -2,6 +2,7 @@ import type { Polygon } from "geojson";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerSerieSatelital } from "../lib/satelital";
 import { _limpiarCacheParaTests } from "../lib/satelital/cache";
+import { EVALSCRIPT_NDVI_NDRE, SCL_DESCARTADAS } from "../lib/satelital/evalscript";
 import { calcularNdre, calcularNdvi } from "../lib/satelital/indices";
 import { _resetTokenParaTests } from "../lib/satelital/sentinelhub";
 import { ConsultaSatelitalSchema } from "../lib/satelital/validacion";
@@ -164,6 +165,7 @@ describe("obtenerSerieSatelital", () => {
       ndvi: 0.73,
       ndre: 0.41,
       coberturaNubesPct: 5,
+      confianza: "alta",
     });
     expect(serie.observaciones[1].coberturaNubesPct).toBe(10);
   });
@@ -254,5 +256,116 @@ describe("obtenerSerieSatelital", () => {
     await obtenerSerieSatelital(parametros);
 
     expect((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(llamadasTrasPrimera);
+  });
+
+  it("13. dos intervalos de la misma fecha se fusionan en una observación, ponderados por píxeles válidos", async () => {
+    process.env.SENTINELHUB_CLIENT_ID = "id";
+    process.env.SENTINELHUB_CLIENT_SECRET = "secreto";
+    // El lote cae sobre el solape de dos órbitas: el satélite pasó UNA vez.
+    mockearSentinelHub(() =>
+      respuestaJson({
+        data: [
+          intervalo("2026-08-01", 0.8, 0.4, 300, 0),
+          intervalo("2026-08-01", 0.6, 0.3, 100, 0),
+        ],
+      }),
+    );
+
+    const serie = await obtenerSerieSatelital(parametros);
+
+    expect(serie.observaciones).toHaveLength(1);
+    // (0,8·300 + 0,6·100) / 400 = 0,75 — no 0,70, que sería el promedio simple.
+    expect(serie.observaciones[0].ndvi).toBe(0.75);
+    expect(serie.observaciones[0].ndre).toBe(0.38);
+    expect(serie.observaciones[0].coberturaNubesPct).toBe(0);
+  });
+
+  it("14. la confianza refleja qué fracción del lote quedó limpia, no un corte binario", async () => {
+    process.env.SENTINELHUB_CLIENT_ID = "id";
+    process.env.SENTINELHUB_CLIENT_SECRET = "secreto";
+
+    const casos = [
+      { sinDato: 50, confianza: "alta", conValor: true },
+      { sinDato: 200, confianza: "media", conValor: true },
+      { sinDato: 400, confianza: "baja", conValor: true },
+      { sinDato: 600, confianza: "nula", conValor: false },
+    ] as const;
+
+    for (const caso of casos) {
+      _limpiarCacheParaTests();
+      mockearSentinelHub(() =>
+        respuestaJson({ data: [intervalo("2026-08-01", 0.7, 0.4, 1000, caso.sinDato)] }),
+      );
+
+      const serie = await obtenerSerieSatelital(parametros);
+      const observacion = serie.observaciones[0];
+
+      expect(observacion.confianza).toBe(caso.confianza);
+      // La invariante del tipo: "nula" ⟺ sin valores.
+      expect(observacion.ndvi !== null).toBe(caso.conValor);
+    }
+  });
+
+  it("15. la serie de demostración no declara confianza: no hay píxeles que contar", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    const serie = await obtenerSerieSatelital(parametros);
+
+    expect(serie.real).toBe(false);
+    expect(serie.observaciones.every((o) => o.confianza === null)).toBe(true);
+    expect(serie.observaciones.every((o) => o.coberturaNubesPct === null)).toBe(true);
+  });
+});
+
+/**
+ * La máscara se ejecuta en los servidores de Sentinel Hub, así que estos
+ * casos evalúan el evalscript REAL que se envía: se compila el string y se
+ * llama a su `evaluatePixel`. Comparar el texto no serviría — lo que importa
+ * es qué píxel sobrevive.
+ */
+describe("máscara de nubes del evalscript", () => {
+  const { evaluatePixel } = new Function(
+    `${EVALSCRIPT_NDVI_NDRE}; return { setup: setup, evaluatePixel: evaluatePixel };`,
+  )() as { evaluatePixel: (m: Record<string, number>) => { dataMask: number[]; ndvi: number[] } };
+
+  /** Píxel de cultivo sano; `scl` y las bandas se pisan por caso. */
+  const pixel = (scl: number, extra: Record<string, number> = {}) =>
+    evaluatePixel({ B04: 0.08, B05: 0.2, B08: 0.45, SCL: scl, dataMask: 1, ...extra });
+
+  it("16. deja pasar el píxel limpio y calcula el índice de `indices.ts`", () => {
+    const salida = pixel(4); // 4 = vegetación
+    expect(salida.dataMask[0]).toBe(1);
+    expect(salida.ndvi[0]).toBeCloseTo(calcularNdvi(0.45, 0.08), 6);
+  });
+
+  it("17. descarta sin dato, saturado, sombra de nube, nube, cirro y nieve", () => {
+    for (const scl of SCL_DESCARTADAS) {
+      expect(pixel(scl).dataMask[0], `SCL ${scl} debería descartarse`).toBe(0);
+    }
+  });
+
+  it("18. conserva sombra proyectada, agua y no clasificado: son estados del lote, no artefactos", () => {
+    for (const scl of [2, 6, 7]) {
+      expect(pixel(scl).dataMask[0], `SCL ${scl} debería conservarse`).toBe(1);
+    }
+  });
+
+  it("19. un píxel con índice indefinido se descarta en vez de emitir NaN", () => {
+    // B08 + B04 = 0: sin guarda, la división emite NaN y NaN contamina el
+    // promedio de toda la fecha, porque Sentinel Hub no lo filtra.
+    const salida = pixel(4, { B04: 0, B05: 0, B08: 0 });
+    expect(salida.dataMask[0]).toBe(0);
+    expect(Number.isNaN(salida.ndvi[0])).toBe(false);
+  });
+
+  it("20. el píxel fuera del polígono se descarta aunque la clase SCL sea limpia", () => {
+    expect(pixel(4, { dataMask: 0 }).dataMask[0]).toBe(0);
+  });
+
+  it("21. una clase SCL no entera por remuestreo se redondea antes de comparar", () => {
+    // SCL viene a 20 m y se remuestrea a 10 m; sin redondeo, 8,8 no estaría en
+    // la lista de descartadas y una nube pasaría como píxel limpio.
+    expect(pixel(8.8).dataMask[0]).toBe(0);
+    expect(pixel(4.2).dataMask[0]).toBe(1);
   });
 });
