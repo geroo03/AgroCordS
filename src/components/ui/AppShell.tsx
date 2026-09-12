@@ -13,7 +13,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <main
-        className={`bg-fondo relative mx-auto flex min-h-dvh w-full max-w-3xl flex-col shadow-[0_0_32px_rgba(15,37,78,0.12)] ${
+        className={`app-fondo relative mx-auto flex min-h-dvh w-full max-w-3xl flex-col shadow-[0_0_32px_rgba(15,37,78,0.12)] ${
           sinNav ? "" : "pb-[var(--nav-height)]"
         }`}
       >

@@ -24,6 +24,20 @@
   --nav-height: calc(9.75rem + env(safe-area-inset-bottom));
 }
 
+/* Foto de campo como fondo, completa y sin recortar (contain), con un velo
+   claro semitransparente para que siga leyéndose como fondo y no compita
+   con las cards blancas de encima. */
+.app-fondo {
+  background-color: var(--color-fondo);
+  background-image:
+    linear-gradient(rgba(244, 245, 247, 0.8), rgba(244, 245, 247, 0.8)),
+    url("/fondo-campo.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  background-size: contain, contain;
+  background-attachment: fixed, fixed;
+}
+
 body {
   color: var(--color-tinta);
   -webkit-tap-highlight-color: transparent;
