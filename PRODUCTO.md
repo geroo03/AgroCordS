@@ -86,6 +86,15 @@
 
 ## Próximos pasos
 
+### Por qué algunos módulos no entran todavía (aunque estén especificados)
+
+Hay un spec más amplio de 13 módulos agronómicos (monitoreo satelital avanzado, riego, notificaciones con backend real, bitácora de campo, importación/exportación, predicción de rendimiento, detección de plagas) del que sólo una parte entra hoy. No es falta de tiempo únicamente — varios necesitan infraestructura que este proyecto no tiene por diseño (ver [Decisiones de la demo](README.md#decisiones-de-la-demo)):
+
+- **Notificaciones con backend real** (tablas de reglas/alertas, un email agrupado por establecimiento, dedup server-side): necesita base de datos, cron y un proveedor de email. Lo que existe hoy (`notificaciones.ts`, Notification API del navegador) es el máximo defendible sin ese backend — está documentado como prototipo, no como el sistema final.
+- **Importación/exportación de lotes** (CSV/KML con mapeo de columnas, preview, undo): es una pieza de UI e integración considerable por sí sola (parsers nuevos, transacciones, deshacer) — no es una extensión de una función existente.
+- **Predicción de rendimiento**: necesita 2-3 campañas cerradas con rinde real por lote, que hoy no existen (ni siquiera el registro de campañas existe todavía). Construirla ahora significaría inventar un número sin datos reales detrás — exactamente lo que este proyecto evita en el motor de pulverización, en el satelital y en el score de manejo.
+- **Detección de plagas**: el paso previo que la haría viable (foto estructurada + revisión remota de un agrónomo) necesita un segundo rol de usuario que la app no tiene — no hay autenticación ni usuarios múltiples, todo vive en `localStorage` de un solo dispositivo.
+
 ### Corto plazo (cerrar el MVP como producto)
 1. **Deploy a Vercel** — el build ya pasa; es importar el repo.
 2. **Supabase + magic link + RLS** — el SQL del esquema ya está escrito (blueprint, sección 5); reemplaza `almacen.ts` y da cuentas, multi-dispositivo y autorización en la base.

@@ -6,6 +6,23 @@ Premium agrega lo que cuesta dar y lo que vale más que la decisión diaria: **a
 
 Premium se puede pagar con una **stablecoin de Twin Finance (ARGt/BRAt) sobre Base**: una interacción onchain real y verificable, no un mock. Ver [Pagos onchain](#pagos-onchain-twin-finance).
 
+## Desarrollo en paralelo (en curso)
+
+Hay 4 paquetes de trabajo repartidos en 4 ramas independientes, pensados para que 3 máquinas/cuentas distintas los tomen en paralelo desde `main` sin pisarse. Cada rama tiene su propio `TAREA.md` en la raíz, autocontenido — no hace falta más contexto que ese archivo para retomarlo en otra máquina.
+
+| Rama | Módulos | Qué toca | Tiempo estimado |
+|---|---|---|---|
+| [`equipo1-nucleo-legal-poligonos`](../../tree/equipo1-nucleo-legal-poligonos) | Corrección de lenguaje legal en el veredicto + validaciones de polígono (auto-intersección, área máxima, solapamiento) | `Veredicto.tsx`, `geo.ts` | ~1-1,5 h |
+| [`equipo2-satelital-m01`](../../tree/equipo2-satelital-m01) | Ajustes de la capa NDVI/NDRE: máscara de nubes, agregación temporal, campo de confianza explícito | `satelital/evalscript.ts`, `satelital/sentinelhub.ts`, `satelital/tipos.ts` | ~45 min-1 h |
+| [`equipo3-helada-m07`](../../tree/equipo3-helada-m07) | Alerta de helada (nuevo): ajuste de temperatura de canopeo en noches radiativas, umbral por cultivo | nuevo `helada.ts`, sección en la pantalla de decisión | ~1,5-2 h |
+| [`equipo3-agronomico-m03-m04`](../../tree/equipo3-agronomico-m03-m04) | Balance hídrico (índice de agotamiento) + grados día acumulados desde la siembra (nuevo) | nuevo `historico.ts`/`agronomico.ts`, campo `fechaSiembra` en `Lote`, pantalla `/lotes/[id]/agronomico` | ~2-2,5 h |
+
+**Para retomar un paquete en otra máquina**: `git fetch && git checkout <rama>`, leé el `TAREA.md` de esa rama, y corré `npm install && npm test` antes de empezar (confirmá 50/50 en verde sobre la base antes de tocar nada). El único punto de fricción entre ramas es una línea de link en el header de `/lotes/[id]/page.tsx` — cada `TAREA.md` explica exactamente dónde agregarla para que el merge final sea trivial.
+
+Quedan **fuera de este reparto** (necesitan infraestructura que el proyecto no tiene hoy — DB, cron, email, un rol de agrónomo revisor, o datos que todavía no existen): notificaciones con backend real, importación/exportación de lotes, predicción de rendimiento y detección de plagas. El detalle de por qué cada uno no entra está en `PRODUCTO.md`.
+
+Esta sección se retira cuando las 4 ramas se integren a `main`.
+
 ## Correr la demo
 
 ```bash
