@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #eef2f7;
+    color: #131b2e;
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom scrollbar hiding for clean cabina mobile feel */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Precision Neumorphism classes matching design specs */
+.shadow-extruded {
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.95), 4px 4px 12px rgba(160, 175, 200, 0.35);
+}
+
+.shadow-extruded-sm {
+  box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.95), 3px 3px 8px rgba(160, 175, 200, 0.3);
+}
+
+.shadow-sunken {
+  box-shadow: inset 3px 3px 6px rgba(160, 175, 200, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.85);
+}
+
+.neo-card {
+  background: #ffffff;
+  box-shadow: 8px 10px 24px rgba(15, 37, 78, 0.08), -6px -6px 18px rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.neo-input-sunken {
+  background: #f4f6fa;
+  box-shadow: inset 3px 3px 6px rgba(15, 37, 78, 0.12), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  border: 1.5px solid #d8e2ef;
+}
+
+.neo-btn-primary {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f254e 100%);
+  box-shadow: 0 10px 20px rgba(15, 37, 78, 0.3), -4px -4px 12px rgba(255, 255, 255, 0.9);
+  transition: all 0.18s ease;
+}
+
+.neo-btn-primary:active {
+  transform: scale(0.985);
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(15, 37, 78, 0.2);
+}
+
+.neo-btn-secondary {
+  background: #ffffff;
+  box-shadow: 5px 6px 14px rgba(15, 37, 78, 0.08), -4px -4px 10px rgba(255, 255, 255, 0.95);
+  border: 1px solid #d8e2ef;
+  transition: all 0.18s ease;
+}
+
+.neo-btn-secondary:active {
+  box-shadow: inset 2px 2px 6px rgba(15, 37, 78, 0.1), inset -2px -2px 6px rgba(255, 255, 255, 0.9);
+  transform: scale(0.985);
+}
+
+.neo-toggle-pill {
+  background: #e2e8f0;
+  box-shadow: inset 2px 2px 4px rgba(15, 37, 78, 0.12), inset -2px -2px 4px rgba(255, 255, 255, 0.85);
+}
+
+.neo-toggle-active {
+  background: #ffffff;
+  box-shadow: 2px 3px 8px rgba(15, 37, 78, 0.12), -2px -2px 6px rgba(255, 255, 255, 0.9);
+}
+
+.clay-card {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #dbeafe 60%, #bfdbfe 100%);
+  box-shadow: 0 16px 28px rgba(15, 37, 78, 0.15), inset 3px 3px 6px rgba(255, 255, 255, 0.9), inset -4px -4px 10px rgba(30, 58, 138, 0.25);
+}
+
+/* High Contrast mode when activated by user in field settings */
+.high-contrast {
+  filter: contrast(115%) saturate(110%);
+}
+
+.high-contrast .shadow-extruded {
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 1), 4px 4px 14px rgba(50, 75, 120, 0.5);
+  border: 1.5px solid #00236f;
+}
+
+.high-contrast .shadow-sunken {
+  box-shadow: inset 4px 4px 8px rgba(0, 35, 111, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 0.95);
+  border: 1.5px solid #00236f;
+}

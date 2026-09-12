@@ -1,0 +1,6 @@
+{
+  "name": "AgroCordS - Ventana de Aplicación",
+  "description": "Sistema agronómico para toma de decisiones en pulverizaciones agrícolas, cálculo de ventana meteorológica, Delta-T, telemetría de lotes y vigor espectral NDVI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
