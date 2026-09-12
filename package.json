@@ -13,6 +13,8 @@
     "@geoman-io/leaflet-geoman-free": "^2.20.1",
     "@turf/area": "^7.4.0",
     "@turf/centroid": "^7.4.0",
+    "@turf/intersect": "^7.4.0",
+    "@turf/kinks": "^7.4.0",
     "leaflet": "^1.9.4",
     "next": "16.3.5",
     "react": "19.2.8",

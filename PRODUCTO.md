@@ -10,7 +10,7 @@
 
 | Problema real | Cómo lo ataca la app |
 |---|---|
-| **La decisión de aplicar se toma a ojo.** El productor mira el viento y decide, pero la calidad de una aplicación depende de al menos seis variables que interactúan (viento, ráfagas, Delta-T, temperatura, humedad, lluvia próxima). | Un motor de decisión evalúa cada hora con umbrales explícitos y devuelve un veredicto único con su razón limitante: "No apliques — Viento de 24 km/h". |
+| **La decisión de aplicar se toma a ojo.** El productor mira el viento y decide, pero la calidad de una aplicación depende de al menos seis variables que interactúan (viento, ráfagas, Delta-T, temperatura, humedad, lluvia próxima). | Un motor de decisión evalúa cada hora con umbrales explícitos y devuelve un veredicto único con su razón limitante: "Condiciones no favorables — Viento de 24 km/h". |
 | **La deriva daña lotes vecinos y genera conflictos y sanciones.** El viento excesivo es conocido; el aire *demasiado quieto* (deriva por suspensión) y la inversión térmica nocturna casi nunca se consideran. | El motor bloquea tanto por viento excesivo como insuficiente, y detecta condiciones compatibles con inversión térmica (noche + calma + cielo despejado) con criterio conservador. |
 | **Se pierde producto y plata por evaporación y lavado.** Aplicar con Delta-T alto evapora la gota antes de llegar al objetivo; una lluvia a las pocas horas lava un producto de contacto. Cada tanque desperdiciado son cientos de dólares. | Delta-T calculado hora por hora (aproximación de Stull) y ventana libre de lluvia según el tipo de producto: un sistémico necesita 1 h sin lluvia, un contacto 4 h. La misma hora puede ser verde para uno y roja para el otro. |
 | **"¿Y si espero?" no tiene respuesta fácil.** Saber que ahora no se puede es la mitad del problema; la otra mitad es saber cuándo sí. | Línea de tiempo de 72 h coloreada hora por hora y ventanas recomendadas (bloques de 2+ h aplicables) ordenadas por calidad, solo hacia adelante. |
@@ -42,12 +42,12 @@
 
 ### Lotes
 - Alta de lote **dibujando el polígono sobre imagen satelital** (Leaflet + Geoman, en español, herramienta activa por defecto).
-- Cálculo automático de **centroide y hectáreas** (Turf); validación de polígono (mínimo 4 vértices y 0,5 ha).
+- Cálculo automático de **centroide y hectáreas** (Turf); validación de polígono: mínimo 4 vértices, entre 0,5 y 5.000 ha, sin auto-intersección, y sin superponerse más de un 10% con un lote ya cargado (medido en ambas direcciones, para que un polígono grande tampoco se trague a uno chico existente).
 - Listado de lotes con **punto de estado actual** por lote (verde / ámbar / rojo con etiqueta en palabras).
 - Botón de **3 lotes de ejemplo** (Marcos Juárez, Río Cuarto, Villa María) para demo instantánea con pronóstico real.
 
 ### Decisión
-- **Veredicto grande** con el estado actual y la razón limitante en una línea ("Aplicá ahora" / "Al límite" / "No apliques").
+- **Veredicto grande** con el estado actual y la razón limitante en una línea ("Condiciones favorables" / "Al límite" / "Condiciones no favorables"). El lenguaje describe condiciones y nunca instruye: la decisión de aplicar es del profesional matriculado (Ley provincial 9164), y el titular no puede contradecir el aviso legal del pie.
 - **Selector de producto en tres niveles en cascada**: Tipo de producto (sistémico / contacto) → Principio activo → Nombre comercial, con **búsqueda por nombre** que completa los tres niveles de una vez (buscar "Karate" selecciona Contacto → Lambdacialotrina → Karate Zeon y reconsulta el motor). El tipo alimenta la evaluación de rain-fastness; los otros dos niveles documentan qué se aplica.
 - **Catálogo curado** (`src/lib/productos.ts`): ~34 principios activos y ~60 marcas comerciales de uso extendido en cultivos extensivos argentinos, agrupados por herbicidas / insecticidas / fungicidas, excluyendo productos prohibidos (paraquat, clorpirifos). La selección prellena el campo de producto del registro.
 - **Línea de tiempo de 72 h**: una franja por hora agrupada por día, coloreada por estado con marca de forma redundante (llena / rayada / borde) y horas pasadas atenuadas. Cada franja es un botón accesible con etiqueta.

@@ -5,10 +5,10 @@ import type { Suitability } from "@/lib/spray-engine";
 import type { ForecastResponsePayload } from "@/lib/tipos";
 
 const ETIQUETAS: Record<Suitability, string> = {
-  optima: "Se puede aplicar",
-  aceptable: "Se puede aplicar",
+  optima: "Favorable",
+  aceptable: "Favorable",
   marginal: "Al límite",
-  no_recomendada: "No aplicar",
+  no_recomendada: "No favorable",
 };
 
 const COLORES: Record<Suitability, string> = {
