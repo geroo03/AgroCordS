@@ -18,6 +18,7 @@
 | **Las herramientas agro suelen ser dashboards de escritorio.** El que decide está arriba de la camioneta, no en la oficina. | Móvil primero: una columna, tipografía grande, toques de 44 px, color nunca como único código (marcas de forma para daltonismo), estados de carga y error en toda pantalla. |
 | **El seguro y el crédito agro se tarifican casi a ciegas.** Sin datos verificables de manejo, la aseguradora o el banco cobran la misma prima/tasa al productor prolijo y al que aplica a ciegas — no hay incentivo económico a las buenas prácticas. | Cada aplicación registrada ya queda congelada con sus condiciones reales; el score de manejo (`src/lib/riesgo.ts`) sintetiza ese historial más la estabilidad del vigor NDVI en un índice pensado como insumo para underwriting paramétrico. |
 | **"¿Cuánto vale realmente esta decisión?" no tiene respuesta en la unidad que le importa al productor.** Un Delta-T de 11 no dice nada sobre plata. | El veredicto se traduce a pesos: cuánto representa aplicar ahora contra esperar la mejor ventana, sobre las hectáreas reales del lote. |
+| **Leer un diagnóstico completo lleva tiempo, y las dudas de seguimiento ("¿y si espero a mañana?") no tienen dónde hacerse.** | Un asistente conversacional por lote (Groq) responde en lenguaje natural sobre el mismo diagnóstico ya calculado, con foco en acciones concretas a evaluar — nunca inventa un dato que ese diagnóstico no tenga. |
 
 ---
 
@@ -50,6 +51,13 @@ No reemplaza al profesional: reduce el tiempo de interpretar información y dete
 - **Score de manejo** (`/lotes/[id]/riesgo`), 0-100 con banda (alto/medio/bajo) y desglose de factores: qué fracción de las aplicaciones registradas se hizo en condiciones aceptables u óptimas (dato congelado, nunca recalculado con umbrales de hoy) + estabilidad del NDVI real entre observaciones sin nubes. Presentado explícitamente como el tipo de dato que un seguro paramétrico o una línea de crédito agro usaría para tarificar riesgo.
 - **Metodología marcada como ilustrativa en la propia pantalla** ("no un modelo actuarial validado"): mismo estándar de honestidad que ya se aplica a NDVI/NDRE y a los umbrales del motor. El costo por hectárea (`COSTO_PROMEDIO_HA_ARS`) y los pesos del score están centralizados para ajustarse en un solo lugar.
 - **No decide nada**: ni el valor económico ni el score tocan `spray-engine.ts`; son una relectura de datos que la app ya genera, no un tercer motor de decisión.
+
+### Asistente conversacional del lote (`src/lib/chat/` — Groq)
+- **Botón flotante en la pantalla de decisión**, con el contexto de ESE lote ya cargado: el mismo `Diagnostico` de `sintesis.ts` que el productor ya ve en pantalla, más el valor económico y las últimas aplicaciones registradas. Nunca vuelve a consultar clima, satélite ni balance hídrico por su cuenta.
+- **Foco en acciones sugeridas, no en explicar de más**: la respuesta llega estructurada (`{"respuesta", "acciones"}`) y la UI destaca las acciones aparte, en una lista corta e imperativa.
+- **Multi-turno en memoria de la sesión** (se pierde al recargar) y **5 consultas gratis por día** por dispositivo antes de pedir Premium — mismo modelo de confianza sin backend que el resto del Paywall de demo.
+- **Mismo límite legal que toda la app**: describe y sugiere qué evaluar, nunca instruye una receta fitosanitaria — reglas explícitas en el propio prompt del sistema (`src/lib/chat/groq.ts`).
+- **No decide nada ni recalcula agronomía**: es una capa conversacional sobre datos que la app ya produce, mismo criterio que el valor económico y el score de manejo de arriba.
 
 ### Lotes
 - Alta de lote **dibujando el polígono sobre imagen satelital** (Leaflet + Geoman, en español, herramienta activa por defecto).

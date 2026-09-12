@@ -18,7 +18,7 @@ npm run dev
 Abrí http://localhost:3000. En la pestaña **Lotes**, "Cargar 3 lotes de ejemplo" crea Marcos Juárez, Río Cuarto y Villa María con pronóstico real, o dibujá un lote propio sobre el mapa satelital.
 
 ```bash
-npm test        # 92 en total: satelital (21) + pagos onchain (18) + síntesis (13) + geo (11) + valor/score (10) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
+npm test        # 111 en total: satelital (21) + pagos onchain (18) + síntesis (15) + geo (11) + valor/score (10) + asistente (17) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
 npm run build   # build de producción
 ```
 
@@ -46,6 +46,7 @@ Cada lote además tiene su propia pantalla de decisión (`/lotes/[id]`) con cuat
 | 🔔 Avisos automáticos cuando se abre una ventana | — | ✅ |
 | 🛰 Vigor vegetativo real (NDVI/NDRE, Sentinel-2) | — | ✅ |
 | 📊 Score de manejo (insumo para seguro/crédito agro) | — | ✅ |
+| 🤖 Asistente conversacional del lote | 5 consultas/día | ✅ Ilimitado |
 
 **"Activar Premium (demo)"** ([Paywall.tsx](src/components/ui/Paywall.tsx)) es una simulación explícita para la demo: pone una bandera en `localStorage` ([plan.ts](src/lib/plan.ts)), no hay checkout ni se piden datos de tarjeta. En producción sería una suscripción real validada en el servidor; la interfaz (`esPremium()` / `activarPremium()`) no cambiaría.
 
@@ -55,6 +56,8 @@ Al lado de ese botón, cuando hay contrato y wallet de destino configurados, apa
 - **Avisos** automatizan lo que hoy el productor hace a mano (entrar y mirar) — valor de conveniencia claro y recurrente.
 - **NDVI/NDRE** consumen cuota real y limitada de Sentinel Hub por cada consulta; gatearlo detrás de Premium es, además de un negocio, una necesidad técnica.
 - **Score de manejo** es el dato que no existe hoy en el mercado de seguros/crédito agro de forma verificable — el activo más vendible a un tercero (aseguradora, banco), no sólo al productor.
+
+**El asistente conversacional** no es todo o nada como los otros tres: da 5 consultas gratis por día (consume cuota real del proveedor de IA en cada respuesta) y de ahí en más pide Premium, igual que el resto — conveniencia diaria gratis, uso intensivo pago.
 
 Las notificaciones usan la Notification API del navegador ([notificaciones.ts](src/lib/notificaciones.ts)): avisan con la pestaña abierta o en segundo plano en el mismo dispositivo. Es un prototipo deliberado — producción necesitaría Web Push (service worker + VAPID + servidor) para avisar con la app cerrada.
 
@@ -113,6 +116,15 @@ Puente entre lo agronómico y lo financiero ([riesgo.ts](src/lib/riesgo.ts)), co
 - **Metodología ilustrativa, dicho explícitamente en la pantalla**: ni el costo por hectárea (`COSTO_PROMEDIO_HA_ARS`) ni los pesos del score son un modelo actuarial calibrado; son un punto de partida razonable para la demo, con el mismo criterio de honestidad que ya se aplica a los umbrales de `spray-engine.ts` y a los datos de NDVI/NDRE.
 - **No decide nada**: ni el valor económico ni el score alteran o reemplazan el veredicto de `spray-engine.ts`. Son una reinterpretación de datos existentes, no un tercer motor.
 
+### Asistente conversacional del lote (Groq)
+- **Botón flotante en la pantalla de decisión** ([BotonChat.tsx](src/components/chat/BotonChat.tsx)) que abre un chat contextual a ESE lote — no una pestaña aparte ni un asistente genérico.
+- **Contexto real, no inventado**: el chat manda a Groq el mismo `Diagnostico` que ya ve el usuario en pantalla ([sintesis.ts](src/lib/sintesis.ts)), más el valor económico y las últimas aplicaciones registradas ([contexto.ts](src/lib/chat/contexto.ts)). Nunca vuelve a consultar clima, satélite ni balance hídrico por su cuenta — si el diagnóstico en pantalla dice una cosa, el chat no puede decir otra.
+- **Foco en acciones sugeridas**: la respuesta separa un texto libre de una lista corta de acciones concretas (`{"respuesta", "acciones"}`, JSON mode de Groq validado con Zod), mostradas aparte en la burbuja del asistente.
+- **Multi-turno en memoria de la sesión**: la conversación se pierde al recargar la página, sin persistencia todavía.
+- **5 consultas gratis por día**, por dispositivo ([limite.ts](src/lib/chat/limite.ts), localStorage, mismo modelo de confianza que `plan.ts`); a partir de la 6ª pide Premium.
+- **Mismo límite legal que el resto de la app**: describe y sugiere qué evaluar, nunca instruye una receta fitosanitaria — el propio prompt del sistema lo dice explícitamente ([groq.ts](src/lib/chat/groq.ts)).
+- Ver [Asistente conversacional](#asistente-conversacional-groq) para cómo configurarlo.
+
 ### Pagos onchain (agro → fintech, track Twin Finance)
 - **Premium se puede pagar con una stablecoin real de Twin Finance** (ARGt o BRAt) sobre la red Base ([lib/pagos/](src/lib/pagos/)): la wallet del usuario (MetaMask u otra) firma y transmite una transferencia ERC-20 de verdad; el servidor la verifica leyendo el recibo real desde el RPC público de Base antes de activar Premium — nunca confía en lo que el navegador reporta.
 - **Interacción onchain real, no un mock**: hash de transacción, bloque, monto (con los decimales reales del token, leídos onchain) y link directo al explorer, verificables por cualquiera de forma independiente.
@@ -127,6 +139,7 @@ Puente entre lo agronómico y lo financiero ([riesgo.ts](src/lib/riesgo.ts)), co
 - **Catálogo de productos curado, no exhaustivo**: la fuente oficial completa es el Registro Nacional de Terapéutica Vegetal de SENASA; el catálogo embebido cubre los de uso más extendido y el registro acepta texto libre para el resto.
 - **Satélite y pulverización son módulos separados.** NDVI/NDRE describen el vigor del lote; no intervienen en la decisión de si se puede aplicar, que sigue siendo puramente meteorológica (`spray-engine.ts` no cambió).
 - **Valor económico y score de manejo tampoco deciden nada.** Son una capa de lectura sobre datos ya existentes (`spray-engine.ts`, `applications`, NDVI); nunca retroalimentan al motor ni al satélite.
+- **El asistente tampoco recalcula agronomía.** Lee el `Diagnostico` ya calculado ([sintesis.ts](src/lib/sintesis.ts)) y lo conversa en lenguaje natural; nunca vuelve a consultar clima, satélite ni balance hídrico por su cuenta ni le agrega datos que ese diagnóstico no tenga.
 - **El pago onchain nunca custodia una clave privada.** Firma siempre la wallet del usuario, en su propia extensión; esta app arma la transacción y lee el recibo público, nada más. Sin `NEXT_PUBLIC_PAGOS_DESTINO` y al menos un contrato de token configurados, esa sección directamente no se renderiza — el paywall de demo sigue como único camino, igual que antes de este módulo.
 
 Ver [PRODUCTO.md](PRODUCTO.md) para el detalle de qué problema resuelve cada función y la hoja de ruta completa (corto/mediano/largo plazo).
@@ -189,6 +202,28 @@ Conseguir las direcciones de contrato reales: Twin Finance no publica un explora
 Para probar sin arriesgar fondos reales: usar `NEXT_PUBLIC_PAGOS_RED=base-sepolia` (testnet de Base) con una wallet cargada de ETH y del token de prueba correspondiente en esa red, si Twin Finance ofrece un despliegue de testnet para el track.
 
 Verificar que la interacción es real: al pagar, la pantalla del paywall muestra el hash de la transacción y, una vez verificada, un link directo a BaseScan — cualquiera puede abrirlo y confirmar la transferencia por sí mismo, independientemente de esta app.
+
+## Asistente conversacional (Groq)
+
+El asistente del lote usa [Groq](https://groq.com/) (API compatible con OpenAI, sin API key propia de streaming necesaria) para responder en lenguaje natural sobre el diagnóstico que la app ya calculó.
+
+La credencial se configura mediante:
+
+```
+GROQ_API_KEY
+```
+
+Sin esta variable, `POST /api/chat` devuelve 503 y la pantalla del chat lo muestra como un error reintentable — mismo criterio que cuando Open-Meteo no responde. No hay fallback de demostración para el chat: a diferencia de NDVI, una respuesta de chatbot inventada sería peor que no tener chat.
+
+Cómo funciona:
+
+- **Única frontera con el proveedor** ([groq.ts](src/lib/chat/groq.ts)): arma el prompt, llama a `POST https://api.groq.com/openai/v1/chat/completions` con `fetch` (sin SDK nueva, mismo criterio que `pagos/rpc.ts`), y valida la respuesta con Zod antes de devolverla. Cambiar de proveedor de LLM toca sólo este archivo.
+- **Modelo**: `llama-3.3-70b-versatile` por defecto, configurable con `GROQ_MODEL` opcional.
+- **JSON forzado**: el system prompt exige `{"respuesta": string, "acciones": string[]}` (`response_format: json_object`); si Groq devuelve otra forma, la API route responde 503 en vez de mostrar un JSON roto.
+- **Nunca inventa datos**: el prompt de sistema instruye usar sólo el contexto del lote que se le pasa (el mismo `Diagnostico` de la pantalla) y decir explícitamente cuando un dato no está disponible.
+- **Límite de 5 consultas gratis por día** aplicado en el cliente ([limite.ts](src/lib/chat/limite.ts)) — sin backend ni cuentas, es el mismo modelo de confianza que el resto del Paywall de demo.
+
+Obtener una API key: crear una cuenta gratuita en [console.groq.com](https://console.groq.com/), generar una API key, y copiarla a `.env.local` siguiendo [.env.example](.env.example). Reiniciar `npm run dev` después de crearla.
 
 ## Aviso legal
 
