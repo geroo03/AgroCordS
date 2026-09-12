@@ -10,10 +10,10 @@ export default function ErrorEstado({
   onReintentar?: () => void;
 }) {
   return (
-    <div role="alert" className="rounded-xl border border-bloqueo/40 bg-bloqueo/5 p-5">
-      <p className="text-base font-medium">{mensaje}</p>
+    <div role="alert" className="clay-elevado rounded-2xl border-2 border-bloqueo/30 p-6">
+      <p className="text-base font-bold text-tinta">{mensaje}</p>
       {onReintentar ? (
-        <Boton variante="secundario" className="mt-3" onClick={onReintentar}>
+        <Boton variante="secundario" className="mt-4 w-full" onClick={onReintentar}>
           Reintentar
         </Boton>
       ) : null}

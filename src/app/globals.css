@@ -1,24 +1,111 @@
 @import "tailwindcss";
 
 @theme {
-  --color-tinta: #10201c;
-  --color-papel: #ffffff;
-  --color-niebla: #e4e8e6;
-  --color-pizarra: #2a4a5c;
+  /* ── Paleta neomórfica: blanco, gris y azul ──────────────────
+     Una sola tonalidad de acento (azul) para no volver la app un arcoíris:
+     el color se reserva para jerarquía y estado, no para decoración. */
+  --color-papel: #ffffff;   /* superficie elevada: tarjetas, campos, chips */
+  --color-lienzo: #e9edf3;    /* lienzo de la app; de acá "emergen" las sombras */
+  --color-tinta: #101828;   /* texto: gris casi negro, alto contraste siempre */
+  --color-niebla: #d7dee8;  /* bordes y separadores suaves */
+  --color-pizarra: #1d4ed8; /* azul de acento: acciones primarias y enlaces */
+
+  /* Reservados al veredicto de pulverización (blueprint, sección 9): el
+     color es semántico ahí, nunca decorativo. No se usan en ningún otro
+     lugar de la interfaz, ni siquiera en los íconos claymorphism. */
   --color-optima: #1f7a3d;
   --color-aceptable: #2f8c50;
   --color-marginal: #c77a00;
   --color-bloqueo: #b3261e;
-  /* Series del gráfico de NDVI/NDRE: identidad de línea, no estado. Par
-     validado contra daltonismo (ΔE CVD 9.1, ΔE visión normal 19.6). */
+
+  /* Series del gráfico de NDVI/NDRE: identidad de línea, no estado.
+     Par validado contra daltonismo (ΔE CVD 9.1, ΔE visión normal 19.6). */
   --color-ndvi: #2a78d6;
   --color-ndre: #eb6834;
-  --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
+
+  /* Tipografía seleccionable desde /ajustes. `--fuente-activa` la fija
+     preferencias.ts al cargar la app; sin preferencia guardada, Archivo. */
+  --font-sans: var(--fuente-activa, var(--font-archivo)), system-ui, sans-serif;
+}
+
+:root {
+  /* Sombra dual del neomorfismo: clara arriba-izquierda, oscura
+     abajo-derecha, ambas calibradas sobre --color-lienzo para que la
+     superficie lea como si sobresaliera del lienzo (o se hundiera en él). */
+  --sombra-clara: #ffffff;
+  --sombra-oscura: #b7c3d6;
+
+  /* Multiplicador del tamaño de letra, elegido en /ajustes. Al escalar el
+     font-size de <html> en vez de clases sueltas, TODA la escala de
+     Tailwind (texto, relleno, alto mínimo de toque) crece junto — agrandar
+     sólo la tipografía y dejar los botones igual de chicos sería peor. */
+  --escala-fuente: 1;
+}
+
+html {
+  font-size: calc(16px * var(--escala-fuente));
 }
 
 body {
-  background: var(--color-papel);
+  background: var(--color-lienzo);
   color: var(--color-tinta);
+}
+
+/* ── Utilidades neomórficas ───────────────────────────────────
+   Tres estados táctiles nada más, para no apilar sombra sobre sombra:
+   elevado (reposo), hundido (campos de texto, "presionado") y el botón
+   primario, que rompe la regla "mismo color que el fondo" a propósito —
+   el neomorfismo de manual es ilegible para una acción principal, así que
+   ahí el contraste manda sobre la pureza del estilo. */
+
+.clay-elevado {
+  background: var(--color-papel);
+  box-shadow:
+    7px 7px 16px var(--sombra-oscura),
+    -7px -7px 16px var(--sombra-clara);
+}
+
+.clay-elevado:active {
+  box-shadow:
+    inset 4px 4px 10px var(--sombra-oscura),
+    inset -4px -4px 10px var(--sombra-clara);
+}
+
+.clay-hundido {
+  background: var(--color-lienzo);
+  box-shadow:
+    inset 4px 4px 9px var(--sombra-oscura),
+    inset -3px -3px 7px var(--sombra-clara);
+}
+
+.clay-boton-primario {
+  background: linear-gradient(160deg, #4c86f0, var(--color-pizarra));
+  box-shadow:
+    0 10px 22px -8px rgba(29, 78, 216, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.clay-boton-primario:active {
+  box-shadow:
+    0 4px 10px -4px rgba(29, 78, 216, 0.5),
+    inset 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.clay-tono-azul {
+  background: linear-gradient(160deg, #4c86f0, var(--color-pizarra));
+  color: #ffffff;
+}
+
+.clay-tono-neutro {
+  background: linear-gradient(160deg, #ffffff, #dde3ec);
+  color: var(--color-pizarra);
+}
+
+.clay-insignia {
+  box-shadow:
+    4px 4px 10px var(--sombra-oscura),
+    -4px -4px 10px var(--sombra-clara),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 /* La franja marginal es rayada: el color nunca es el único portador de información. */

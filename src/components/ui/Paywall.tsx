@@ -34,16 +34,16 @@ export default function Paywall({ titulo, descripcion, onActivado }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-pizarra/30 bg-pizarra/5 p-5 text-center">
-      <p className="text-3xl" aria-hidden>
+    <div className="clay-elevado rounded-3xl p-6 text-center">
+      <span className="clay-tono-azul clay-insignia mx-auto flex h-16 w-16 items-center justify-center rounded-2xl text-3xl">
         🔒
-      </p>
-      <h2 className="mt-2 text-lg font-bold">{titulo}</h2>
-      <p className="mt-1 text-sm text-tinta/70">{descripcion}</p>
-      <Boton onClick={activar} disabled={activando} className="mt-4 w-full">
+      </span>
+      <h2 className="mt-3 text-lg font-extrabold text-tinta">{titulo}</h2>
+      <p className="mt-1 text-sm font-medium text-tinta/70">{descripcion}</p>
+      <Boton onClick={activar} disabled={activando} className="mt-5 w-full">
         {activando ? "Activando…" : "Activar Premium (demo)"}
       </Boton>
-      <p className="mt-2 text-xs text-tinta/50">
+      <p className="mt-2 text-xs font-medium text-tinta/50">
         Simulación para la demo — no se realiza ningún cobro.
       </p>
 

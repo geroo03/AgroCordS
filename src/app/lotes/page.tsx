@@ -21,7 +21,7 @@ import type { Lote } from "@/lib/tipos";
 
 const MapaLote = dynamic(() => import("@/components/mapa/MapaLote"), {
   ssr: false,
-  loading: () => <div className="h-[420px] animate-pulse rounded-xl bg-niebla" />,
+  loading: () => <div className="clay-hundido h-[420px] animate-pulse rounded-3xl" />,
 });
 
 const CENTRO_INICIAL: [number, number] = [-32.7, -62.1];
@@ -90,7 +90,7 @@ export default function PaginaLotes() {
       {lotes === null ? (
         <div className="space-y-2">
           {[0, 1].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-niebla" />
+            <div key={i} className="clay-hundido h-16 animate-pulse rounded-2xl" />
           ))}
         </div>
       ) : lotes.length === 0 ? (
@@ -104,12 +104,12 @@ export default function PaginaLotes() {
           </Boton>
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {lotes.map((lote) => (
             <li key={lote.id}>
               <Link
                 href={`/lotes/${lote.id}`}
-                className="flex min-h-16 items-center gap-3 rounded-xl border border-niebla p-3"
+                className="clay-elevado flex min-h-16 items-center gap-3 rounded-2xl p-4 transition-transform active:scale-[0.98]"
               >
                 <MiniaturaLote lote={lote} className="h-18 w-18" />
                 {/* El estado va debajo y no al costado: compitiendo por el
@@ -154,7 +154,7 @@ export default function PaginaLotes() {
           </p>
         ) : null}
         {borrador ? (
-          <div className="mt-3 space-y-3 rounded-xl border border-niebla p-4">
+          <div className="clay-elevado mt-3 space-y-4 rounded-2xl p-5">
             <p className="text-base font-bold">
               Lote dibujado: {hectareas(borrador.areaHa)}
             </p>
@@ -179,7 +179,7 @@ export default function PaginaLotes() {
               value={fechaSiembra}
               onChange={(e) => setFechaSiembra(e.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Boton onClick={guardar} disabled={nombre.trim().length === 0}>
                 Guardar lote
               </Boton>

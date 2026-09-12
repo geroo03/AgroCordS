@@ -1,6 +1,6 @@
 export default function Vacio({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl bg-niebla/50 p-5 text-base leading-relaxed text-tinta/80">
+    <p className="clay-elevado rounded-2xl p-6 text-base leading-relaxed font-medium text-tinta">
       {children}
     </p>
   );
