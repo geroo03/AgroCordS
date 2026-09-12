@@ -26,15 +26,40 @@ Para datos satelitales reales, copiá `.env.example` a `.env.local` y completá 
 
 ## Navegación
 
-Barra inferior fija de tres secciones ([BarraNavegacion.tsx](src/components/ui/BarraNavegacion.tsx)), estilo app móvil:
+Barra inferior fija de cuatro secciones ([BarraNavegacion.tsx](src/components/ui/BarraNavegacion.tsx)), estilo app móvil:
 
 | Pestaña | Qué muestra |
 |---|---|
 | **Lotes** ([/lotes](src/app/lotes/page.tsx)) | Listado con miniatura satelital y estado actual por lote; alta dibujando un polígono nuevo. |
 | **Ventanas** ([/ventanas](src/app/ventanas/page.tsx)) | Tablero agregado: las próximas ventanas de aplicación de todos los lotes juntas, ordenadas por la más próxima. |
 | **Historial** ([/historial](src/app/historial/page.tsx)) | Todas las aplicaciones registradas, de todos los lotes, cada una expandible a sus condiciones congeladas. |
+| **Ajustes** ([/ajustes](src/app/ajustes/page.tsx)) | Tamaño del texto de toda la app, elegible y aplicado al instante — accesibilidad real, no un detalle cosmético. |
 
-Cada lote además tiene su propia pantalla de decisión (`/lotes/[id]`) con cuatro vistas enlazadas desde el encabezado: **NDVI**, **Riesgo** (el score de manejo), **Historial** por lote y **Agronómico** (grados día y agotamiento hídrico). NDVI y Riesgo son Premium: sin activar, muestran un paywall y no consultan Sentinel Hub — no se gasta cuota del proveedor por curiosidad.
+Cada lote además tiene su propia pantalla de decisión (`/lotes/[id]`) con cinco vistas enlazadas desde el encabezado ([SubNavLote.tsx](src/components/ui/SubNavLote.tsx)): **Detalle**, **NDVI**, **Riesgo** (el score de manejo), **Agro** (grados día y agotamiento hídrico) e **Historial** por lote. NDVI y Riesgo son Premium: sin activar, muestran un paywall y no consultan Sentinel Hub — no se gasta cuota del proveedor por curiosidad.
+
+## Sistema de diseño (AgroCordS)
+
+Neomorfismo + claymorfismo, en blanco/gris/azul — pensado para leerse a pleno
+sol en cabina, con texto siempre en alto contraste (el neomorfismo nunca
+reemplaza el color por relieve solo).
+
+- **Tres estados táctiles** ([globals.css](src/app/globals.css)): elevado
+  (`clay-elevado`, reposo), hundido (`clay-hundido`, campos y "presionado") y
+  el botón primario (`clay-boton-primario`), que rompe la regla a propósito
+  — mismo color que el fondo sería ilegible para una acción principal.
+- **Insignias claymorphism** ([IconoClay.tsx](src/components/ui/IconoClay.tsx)):
+  cada ícono de sección vive dentro de una superficie blanda con brillo
+  interior, nunca como una línea plana — glifos propios en SVG
+  ([Glifos.tsx](src/components/ui/iconos/Glifos.tsx)), sin fuente de íconos
+  externa.
+- **Tipografía**: Space Grotesk, una sola familia con identidad propia. El
+  tamaño de texto sigue siendo elegible desde **Ajustes** — escala el
+  `font-size` de `<html>`, así toda la escala de Tailwind (texto, relleno,
+  alto mínimo de toque) crece junta, no sólo la letra.
+- **Login por magic link** ([/login](src/app/login/page.tsx)): pantalla lista,
+  con "Seguir sin cuenta" como camino a la app tal como funciona hoy. El envío
+  y el ingreso todavía están simulados (`TODO(backend)` marcado en el código)
+  — conectarla al [backend](#backend-server) real es el paso que falta.
 
 ## Modelo freemium
 
@@ -268,11 +293,12 @@ supabase db push
 
 o pegar el archivo entero en el *SQL Editor* de supabase.com/dashboard.
 
-**La app Next.js no cambió nada todavía**: `almacen.ts`, `plan.ts` y
-`chat/limite.ts` siguen en `localStorage`, sin tocar. Lo que sí existe ya es el
-backend que habla con estas tablas — ver [Backend](#backend-server) — falta
-conectar la app Next.js a él (login con magic link + cliente HTTP), que queda
-como paso siguiente.
+**La app Next.js no cambió su persistencia todavía**: `almacen.ts`, `plan.ts` y
+`chat/limite.ts` siguen en `localStorage`, sin tocar. Ya existen la [pantalla
+de login](#sistema-de-diseño-agrocords) (simulada, sin backend real detrás
+todavía) y el [backend](#backend-server) que habla con estas tablas — falta
+conectar uno con el otro (cliente HTTP + Supabase Auth real en `/login`), que
+queda como paso siguiente.
 
 ## Backend (`server/`)
 
@@ -299,7 +325,8 @@ API routes de Next.js (`forecast`, `satellite`, `pagos/verificar`, `chat`,
 - **27 tests sin proyecto Supabase real**: el cliente se inyecta por
   parámetro, así que los tests le pasan un doble de prueba en vez de mockear
   el SDK completo (`server/tests/apoyo.ts`).
-- **Sin conectar a la app Next.js todavía**: no hay pantalla de login ni
+- **Sin conectar a la app Next.js todavía**: la [pantalla de
+  login](#sistema-de-diseño-agrocords) ya existe pero está simulada, y no hay
   cliente HTTP del lado del navegador — eso es la parte que falta para que
   `almacen.ts` y compañía dejen de usar `localStorage`.
 
