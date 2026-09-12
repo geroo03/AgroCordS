@@ -21,7 +21,10 @@ describe("agronomico", () => {
   });
 
   it("aplica el techo individualmente", () => {
-    expect(calcularGddAcumulado([dia({ tMaxC: 38, tMinC: 20 })], "maiz")).toBe(20);
+    // Maíz: tBase 10, techo 30. tMax se acota a 30 (no a 38) antes de promediar:
+    // (30 + 20)/2 - 10 = 15. Sin acotar sería (38+20)/2-10=19: confirma que un
+    // día de 38°C no suma más GDD que uno de exactamente 30°C.
+    expect(calcularGddAcumulado([dia({ tMaxC: 38, tMinC: 20 })], "maiz")).toBe(15);
   });
 
   it("mantiene bajo el agotamiento con lluvia abundante", () => {
