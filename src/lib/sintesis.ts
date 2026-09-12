@@ -61,6 +61,12 @@ export interface Diagnostico {
   /** El peor estado entre los hallazgos que sí tienen datos. */
   readonly estado: EstadoSintesis;
   readonly titular: string;
+  /**
+   * Categoría de la que salió `titular`, o `null` cuando el titular es un
+   * resumen propio y no el de ningún hallazgo. La UI lo usa para no decir dos
+   * veces lo mismo: el bloque que produjo el titular no lo repite.
+   */
+  readonly principal: CategoriaDecision | null;
   readonly hallazgos: readonly Hallazgo[];
 }
 
@@ -127,26 +133,34 @@ export function sintetizar(entrada: EntradaSintesis): Diagnostico {
     return {
       estado: "sin_datos",
       titular: "Todavía no hay datos suficientes para una conclusión",
+      principal: null,
       hallazgos: ordenados,
     };
   }
 
-  return {
-    estado: conDatos[0].estado,
-    titular: titularGeneral(conDatos),
-    hallazgos: ordenados,
-  };
+  const { titular, principal } = titularGeneral(conDatos);
+  return { estado: conDatos[0].estado, titular, principal, hallazgos: ordenados };
 }
 
-function titularGeneral(conDatos: readonly Hallazgo[]): string {
+function titularGeneral(conDatos: readonly Hallazgo[]): {
+  titular: string;
+  principal: CategoriaDecision | null;
+} {
   const peor = conDatos[0];
   if (peor.estado === "favorable") {
-    return conDatos.length > 1 ? "Sin señales de alerta en el lote" : peor.titular;
+    // Con varias categorías en verde el titular resume y no repite a ninguna,
+    // así que no hay bloque del que provenga.
+    return conDatos.length > 1
+      ? { titular: "Sin señales de alerta en el lote", principal: null }
+      : { titular: peor.titular, principal: peor.categoria };
   }
   const acompañan = conDatos.filter(
     (h) => h !== peor && h.estado === peor.estado,
   ).length;
-  return acompañan > 0 ? `${peor.titular}, y algo más para mirar` : peor.titular;
+  return {
+    titular: acompañan > 0 ? `${peor.titular}, y algo más para mirar` : peor.titular,
+    principal: peor.categoria,
+  };
 }
 
 // ── Riesgo climático (helada) ────────────────────────────────

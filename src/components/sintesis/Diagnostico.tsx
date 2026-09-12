@@ -62,7 +62,12 @@ export default function Diagnostico({ diagnostico }: { diagnostico: TipoDiagnost
 
         <div className="mt-4 space-y-4">
           {conDatos.map((h) => (
-            <BloqueHallazgo key={h.categoria} hallazgo={h} />
+            <BloqueHallazgo
+              key={h.categoria}
+              hallazgo={h}
+              // El titular de arriba salió de este bloque: no se repite.
+              tituloYaDicho={h.categoria === diagnostico.principal}
+            />
           ))}
         </div>
 
@@ -91,16 +96,27 @@ export default function Diagnostico({ diagnostico }: { diagnostico: TipoDiagnost
   );
 }
 
-function BloqueHallazgo({ hallazgo }: { hallazgo: Hallazgo }) {
+function BloqueHallazgo({
+  hallazgo,
+  tituloYaDicho = false,
+}: {
+  hallazgo: Hallazgo;
+  tituloYaDicho?: boolean;
+}) {
   const estilo = ESTADO[hallazgo.estado];
 
   return (
     <div className="border-l-2 border-niebla pl-3">
       <p className="flex items-center gap-2 text-xs font-semibold text-tinta/60">
         <span className={`h-2 w-2 shrink-0 rounded-full ${estilo.punto}`} aria-hidden />
-        {ETIQUETA_CATEGORIA[hallazgo.categoria]} · {estilo.etiqueta}
+        {/* Con el titular repetido arriba, el estado también lo estaría. */}
+        {tituloYaDicho
+          ? ETIQUETA_CATEGORIA[hallazgo.categoria]
+          : `${ETIQUETA_CATEGORIA[hallazgo.categoria]} · ${estilo.etiqueta}`}
       </p>
-      <p className="mt-0.5 text-base font-bold">{hallazgo.titular}</p>
+      {tituloYaDicho ? null : (
+        <p className="mt-0.5 text-base font-bold">{hallazgo.titular}</p>
+      )}
       <p className="mt-1 text-sm leading-relaxed text-tinta/80">{hallazgo.interpretacion}</p>
 
       {hallazgo.aEvaluar ? (

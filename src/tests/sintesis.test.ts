@@ -177,6 +177,24 @@ describe("sintetizar", () => {
     expect([...secuencia].sort((a, b) => b - a)).toEqual(secuencia);
   });
 
+  it("señala de qué hallazgo salió el titular, para no repetirlo en pantalla", () => {
+    const helada = heladaTranquila();
+    helada[2] = { ...helada[2], temperaturaCanopeoC: -3, enRiesgo: true };
+    const d = sintetizar({ ...base, helada });
+    expect(d.principal).toBe("clima");
+    // El titular general contiene el del hallazgo: si la UI mostrara los dos,
+    // el usuario leería la misma frase dos veces.
+    const origen = d.hallazgos.find((h) => h.categoria === d.principal)!;
+    expect(d.titular.startsWith(origen.titular)).toBe(true);
+  });
+
+  it("un titular que resume varias categorías no proviene de ninguna", () => {
+    const d = sintetizar({ ...base, agua: { indiceHoy: 0.2, indicePrevio: 0.2 } });
+    expect(d.titular).toBe("Sin señales de alerta en el lote");
+    // No es el titular de ningún bloque, así que no hay nada que ocultar.
+    expect(d.principal).toBeNull();
+  });
+
   it("todo en orden da un titular sin alarma", () => {
     const d = sintetizar({ ...base, agua: { indiceHoy: 0.2, indicePrevio: 0.2 } });
     expect(d.estado).toBe("favorable");
