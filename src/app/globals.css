@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tinta: #10201c;
+  --color-papel: #ffffff;
+  --color-niebla: #e4e8e6;
+  --color-pizarra: #2a4a5c;
+  --color-optima: #1f7a3d;
+  --color-aceptable: #2f8c50;
+  --color-marginal: #c77a00;
+  --color-bloqueo: #b3261e;
+  --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-papel);
+  color: var(--color-tinta);
+}
+
+/* La franja marginal es rayada: el color nunca es el único portador de información. */
+.franja-rayada {
+  background-color: color-mix(in srgb, var(--color-marginal) 30%, white);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-marginal) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
