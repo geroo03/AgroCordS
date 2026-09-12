@@ -54,6 +54,23 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Foto de campo como fondo del lienzo: completa y sin recortar (contain,
+   centrada), con un velo del propio --color-lienzo semitransparente encima
+   para que siga leyéndose como fondo y no compita con las cards de arriba. */
+.lienzo-foto {
+  background-color: var(--color-lienzo);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--color-lienzo) 80%, transparent),
+      color-mix(in srgb, var(--color-lienzo) 80%, transparent)
+    ),
+    url("/fondo-campo.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  background-size: contain, contain;
+  background-attachment: fixed, fixed;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }

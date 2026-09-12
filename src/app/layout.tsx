@@ -22,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={grotesk.variable}>
-      <body className="font-sans antialiased">
+      <body className="lienzo-foto font-sans antialiased">
         <AplicarPreferencias />
         <AppShell>{children}</AppShell>
       </body>
