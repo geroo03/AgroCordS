@@ -23,7 +23,13 @@ describe("evaluarHelada", () => {
   });
 
   it("no ajusta durante el día", () => {
-    expect(evaluarHelada([hora({ isDay: true })], "soja")[0].enRiesgo).toBe(false);
+    // 1°C: de noche con cielo despejado y calma el canopeo baja a -2°C (riesgo,
+    // ≤ 0 para soja); de día no hay ajuste radiativo y queda en 1°C (sin
+    // riesgo). Con -1°C (el valor por defecto de hora()) ya habría riesgo aun
+    // sin ajuste, porque -1 ≤ 0: no serviría para probar que el ajuste es
+    // exclusivamente nocturno.
+    expect(evaluarHelada([hora({ temperatureC: 1 })], "soja")[0].enRiesgo).toBe(true);
+    expect(evaluarHelada([hora({ temperatureC: 1, isDay: true })], "soja")[0].enRiesgo).toBe(false);
   });
 
   it("no ajusta con nubosidad o viento", () => {
