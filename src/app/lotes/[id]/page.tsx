@@ -11,7 +11,6 @@ import RegistrarAplicacion from "@/components/registro/RegistrarAplicacion";
 import SelectorProducto, {
   type SeleccionProducto,
 } from "@/components/registro/SelectorProducto";
-import ValorEconomico from "@/components/decision/ValorEconomico";
 import Cargando from "@/components/ui/Cargando";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
@@ -269,7 +268,6 @@ export default function PaginaDecision() {
       ) : (
         <>
           <Diagnostico diagnostico={diagnostico} />
-          <ValorEconomico valor={valor} />
 
           <SelectorProducto
             tipo={tipoProducto}

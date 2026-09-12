@@ -16,7 +16,6 @@ import {
   permisoDisponible,
 } from "@/lib/notificaciones";
 import { esPremium } from "@/lib/plan";
-import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
 interface Registro {
@@ -24,8 +23,12 @@ interface Registro {
   datos: ForecastResponsePayload | "error";
 }
 
+// Sin selector visible: esta pantalla usa el criterio más conservador
+// (sistémico) para las 72 h de cada lote. El tipo de producto específico
+// se elige al registrar la aplicación, dentro de cada lote.
+const TIPO_PRODUCTO = "sistemico";
+
 export default function PaginaVentanas() {
-  const [tipoProducto, setTipoProducto] = useState<ProductType>("sistemico");
   const [registros, setRegistros] = useState<Registro[] | null>(null);
   const [sinLotes, setSinLotes] = useState(false);
   const [premium, setPremium] = useState(false);
@@ -55,7 +58,7 @@ export default function PaginaVentanas() {
       lotes.map(async (lote): Promise<Registro> => {
         try {
           const r = await fetch(
-            `/api/forecast?lat=${lote.centroidLat}&lng=${lote.centroidLng}&productType=${tipoProducto}`,
+            `/api/forecast?lat=${lote.centroidLat}&lng=${lote.centroidLng}&productType=${TIPO_PRODUCTO}`,
           );
           if (!r.ok) throw new Error(String(r.status));
           return { lote, datos: (await r.json()) as ForecastResponsePayload };
@@ -89,7 +92,7 @@ export default function PaginaVentanas() {
         if (datos !== "error") avisarSiVentanaAbierta(lote, datos.windows[0] ?? null);
       }
     }
-  }, [tipoProducto]);
+  }, []);
 
   useEffect(() => {
     consultar();
@@ -105,26 +108,6 @@ export default function PaginaVentanas() {
           Cuándo se puede aplicar en cada lote, en las próximas 72 h.
         </p>
       </header>
-
-      <div
-        role="group"
-        aria-label="Tipo de producto"
-        className="clay-hundido flex items-center gap-1 rounded-2xl p-1"
-      >
-        {(["sistemico", "contacto"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            aria-pressed={tipoProducto === t}
-            onClick={() => setTipoProducto(t)}
-            className={`min-h-11 flex-1 rounded-xl text-base font-semibold transition-all active:scale-[0.98] ${
-              tipoProducto === t ? "clay-elevado font-bold text-pizarra" : "text-tinta/70"
-            }`}
-          >
-            {t === "sistemico" ? "Sistémico" : "Contacto"}
-          </button>
-        ))}
-      </div>
 
       {!premium ? (
         <Paywall

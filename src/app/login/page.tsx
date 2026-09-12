@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 import Boton from "@/components/ui/Boton";
 import IconoClay from "@/components/ui/IconoClay";
 import {
-  GlifoAgua,
   GlifoAlerta,
   GlifoCorreo,
   GlifoCorreoAbierto,
@@ -91,17 +90,12 @@ export default function PaginaLogin() {
       <main className="flex flex-1 flex-col justify-center gap-6">
         {/* Marca */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="clay-tono-azul clay-insignia flex h-20 w-20 items-center justify-center rounded-3xl">
-            <span className="h-10 w-10">
-              <GlifoAgua />
-            </span>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- logo estático, no necesita optimización de next/image */}
+          <img src="/logo-agrocords.png" alt="AgroCordS" className="h-24 w-24 rounded-3xl" />
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-tinta">
-              Ventana de Aplicación
-            </h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-tinta">AgroCordS</h1>
             <p className="mt-0.5 text-xs font-bold tracking-[0.2em] text-pizarra uppercase">
-              Decisión agronómica
+              Ventana de aplicación
             </p>
           </div>
           <div className="clay-hundido mt-1 max-w-[380px] rounded-xl p-4">

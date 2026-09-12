@@ -12,7 +12,7 @@ import AppShell from "@/components/ui/AppShell";
 const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" });
 
 export const metadata: Metadata = {
-  title: "Ventana de Aplicación",
+  title: "AgroCordS — Ventana de Aplicación",
   description:
     "Decide si se puede pulverizar un lote, hora por hora, durante las próximas 72 h.",
 };
