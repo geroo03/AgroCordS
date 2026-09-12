@@ -1,6 +1,8 @@
 # Ventana de Aplicación
 
-App web móvil, freemium, con un propósito fijo: **decidir si se puede pulverizar un lote, ahora, en las próximas 72 h.** Eso es gratis, ilimitado, y es lo que se usa todos los días.
+Plataforma de inteligencia agronómica: transforma datos meteorológicos, satelitales e históricos en **una conclusión clara sobre cada lote**. El productor abre la app, mira diez segundos y sabe qué está pasando, qué riesgo hay y qué conviene evaluar; el agrónomo abre la evidencia que sostiene esa conclusión.
+
+La pulverización es la puerta de entrada — un problema concreto, frecuente y diario — y sigue siendo gratis e ilimitada, pero ya no es el único objetivo.
 
 Premium agrega lo que cuesta dar y lo que vale más que la decisión diaria: **avisos automáticos** de cuándo se abre una ventana (para no tener que entrar a revisar), **vigor vegetativo real** por satélite (NDVI/NDRE, Sentinel-2) y un **score de manejo** pensado como insumo para seguros paramétricos o crédito agro. Ver [Modelo freemium](#modelo-freemium).
 
@@ -16,7 +18,7 @@ npm run dev
 Abrí http://localhost:3000. En la pestaña **Lotes**, "Cargar 3 lotes de ejemplo" crea Marcos Juárez, Río Cuarto y Villa María con pronóstico real, o dibujá un lote propio sobre el mapa satelital.
 
 ```bash
-npm test        # 79 en total: motor (8) + satelital (21) + pagos onchain (18) + geo (11) + valor/score (10) + helada (5) + agronómico (4) + notificaciones (2)
+npm test        # 92 en total: satelital (21) + pagos onchain (18) + síntesis (13) + geo (11) + valor/score (10) + motor (8) + helada (5) + agronómico (4) + notificaciones (2)
 npm run build   # build de producción
 ```
 
@@ -57,6 +59,25 @@ Al lado de ese botón, cuando hay contrato y wallet de destino configurados, apa
 Las notificaciones usan la Notification API del navegador ([notificaciones.ts](src/lib/notificaciones.ts)): avisan con la pestaña abierta o en segundo plano en el mismo dispositivo. Es un prototipo deliberado — producción necesitaría Web Push (service worker + VAPID + servidor) para avisar con la app cerrada.
 
 ## Qué hace
+
+### Diagnóstico del lote (la conclusión, primero)
+Una capa de síntesis ([sintesis.ts](src/lib/sintesis.ts)) lee lo que ya produjeron los motores —pulverización, helada, balance hídrico, vigor satelital— y responde en el orden en que hace falta: **qué pasa, qué cambió, qué conviene evaluar y con qué evidencia**. No calcula agronomía por su cuenta ni corrige a ningún motor.
+
+- **Un estado y un titular arriba de todo**: situación favorable / atención / riesgo, siempre con la palabra al lado del color. El peor hallazgo manda.
+- **Un bloque por categoría** (aplicación, agua y estrés, riesgo climático, estado del cultivo) con su interpretación y, cuando corresponde, **qué conviene evaluar**.
+- **La evidencia a un toque**: cada bloque abre los datos crudos que lo sustentan, para el usuario técnico.
+- **Señal cruzada**: cuando la reserva de agua cede y el vigor cae en la misma ventana, las dos señales se leen juntas y la conclusión sube de tono — el caso que justifica la capa, porque por separado cada indicador puede verse tolerable.
+- **Sin datos suficientes se dice explícitamente**, con el motivo por categoría. Nunca se concluye sobre un hueco: una conclusión apoyada en nada suena igual de segura que una apoyada en evidencia.
+
+Tres registros de lenguaje separados a propósito, y esa separación es la razón de ser del módulo:
+
+| | Ejemplo |
+|---|---|
+| **Información** | "Se esperan mínimas de 0,8 °C." |
+| **Interpretación** | "Compatible con riesgo de helada para el cultivo declarado." |
+| **Acción a evaluar** | "Conviene evaluar medidas de protección y monitoreo del lote." |
+
+Nunca una instrucción de aplicar, sembrar o regar: la decisión agronómica sigue siendo del profesional matriculado (Ley provincial 9164). Hay una prueba que lo verifica sobre todos los escenarios.
 
 ### Decisión de aplicación
 - **Veredicto actual** por lote: "Condiciones favorables" / "Al límite" / "Condiciones no favorables", con la razón limitante concreta. Describe condiciones, nunca instruye aplicar o no: esa decisión es del profesional matriculado (Ley provincial 9164).

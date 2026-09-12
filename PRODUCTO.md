@@ -21,6 +21,17 @@
 
 ---
 
+## El principio: dato → interpretación → conclusión → acción a evaluar → evidencia
+
+La app dejó de ser un tablero de indicadores. Conocer un NDVI de 0,68, un agotamiento de 0,64 y una mínima de 1,8 °C no le dice a un productor qué hacer; el trabajo de interpretarlos lo hacía él, cada vez.
+
+La capa de síntesis ([sintesis.ts](src/lib/sintesis.ts)) hace ese trabajo y expone el resultado en dos niveles: la **conclusión primero**, para resolver en diez segundos, y la **evidencia a un toque**, para que el agrónomo revise en qué se apoya. Dos reglas que el módulo cumple sin excepción:
+
+- Ningún indicador importante se muestra sin explicar qué significa.
+- Ninguna conclusión se emite sin mostrar los datos que la sustentan — y si esos datos no alcanzan, se dice, con el motivo.
+
+No reemplaza al profesional: reduce el tiempo de interpretar información y detectar lo que merece atención. Por eso el lenguaje separa información, interpretación y acción a evaluar, y nunca instruye.
+
 ## Funciones del MVP
 
 ### Navegación (app web móvil)

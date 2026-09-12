@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Claude desktop launch config
 .claude/
+
+# Salida de herramientas de empaquetado de contexto
+repomix-output.xml

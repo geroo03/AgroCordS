@@ -1,3 +1,4 @@
+import { cultivoODefecto } from "./cultivo";
 import type { DiaHistorico } from "./historico";
 
 export const UMBRALES_GDD = {
@@ -9,8 +10,7 @@ export const UMBRALES_GDD = {
 export const AGUA_UTIL_MAX_MM = 175;
 
 function umbralParaCultivo(cultivo: string | null) {
-  const clave = cultivo?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  return UMBRALES_GDD[clave === "trigo" ? "trigo" : clave === "maiz" ? "maiz" : "soja"];
+  return UMBRALES_GDD[cultivoODefecto(cultivo)];
 }
 
 export function calcularGddAcumulado(

@@ -58,7 +58,12 @@ export function hectareas(areaHa: number): string {
   return `${areaHa.toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha`;
 }
 
-function fechaLocalHoy(): string {
+/**
+ * Fecha de HOY en hora local, no UTC. `toISOString()` devuelve la fecha UTC:
+ * en Argentina (UTC-3) a partir de las 21:00 ya es la de mañana, y una API
+ * que sólo acepta fechas pasadas rechaza esa consulta.
+ */
+export function fechaLocalHoy(): string {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(
     n.getDate(),

@@ -10,7 +10,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Vacio from "@/components/ui/Vacio";
 import { cargarLotesDemo, guardarLote, listarLotes } from "@/lib/almacen";
-import { hectareas } from "@/lib/formato";
+import { fechaLocalHoy, hectareas } from "@/lib/formato";
 import {
   medirPoligono,
   posicionesLeaflet,
@@ -168,6 +168,7 @@ export default function PaginaLotes() {
             <Campo
               etiqueta="Fecha de siembra (opcional)"
               type="date"
+              max={fechaLocalHoy()}
               value={fechaSiembra}
               onChange={(e) => setFechaSiembra(e.target.value)}
             />

@@ -8,21 +8,15 @@ import Cargando from "@/components/ui/Cargando";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
 import {
+  AGUA_UTIL_MAX_MM,
   calcularGddAcumulado,
   calcularIndiceAgotamiento,
 } from "@/lib/agronomico";
 import { fetchHistoricoDiario } from "@/lib/historico";
 import { obtenerLote } from "@/lib/almacen";
-import { hectareas } from "@/lib/formato";
+import { kcParaCultivo } from "@/lib/cultivo";
+import { fechaLocalHoy, hectareas } from "@/lib/formato";
 import type { Lote } from "@/lib/tipos";
-
-function kcParaCultivo(cultivo: string | null): number {
-  const normalizado = cultivo
-    ?.normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  return normalizado === "trigo" ? 0.95 : normalizado === "maiz" ? 1 : 0.8;
-}
 
 export default function PaginaAgronomica() {
   const params = useParams<{ id: string }>();
@@ -47,7 +41,7 @@ export default function PaginaAgronomica() {
       latitude: lote.centroidLat,
       longitude: lote.centroidLng,
       desde: lote.fechaSiembra,
-      hasta: new Date().toISOString().slice(0, 10),
+      hasta: fechaLocalHoy(),
     })
       .then((dias) => {
         setGdd(calcularGddAcumulado(dias, lote.cultivo));
@@ -119,7 +113,7 @@ export default function PaginaAgronomica() {
               <p className="mt-2 text-sm text-tinta/70">0 = suelo lleno; 1 = agotado.</p>
             </section>
             <p className="text-sm text-tinta/70 sm:col-span-2">
-              Supuesto: reserva inicial de {175} mm de agua útil a capacidad de campo. El Kc es una aproximación fija de la etapa de mayor demanda.
+              Supuesto: reserva inicial de {AGUA_UTIL_MAX_MM} mm de agua útil a capacidad de campo. El Kc es una aproximación fija de la etapa de mayor demanda.
             </p>
           </div>
         )}

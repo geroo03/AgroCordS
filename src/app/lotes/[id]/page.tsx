@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import DetalleHora from "@/components/decision/DetalleHora";
 import MiniaturaLote from "@/components/mapa/MiniaturaLote";
 import LineaDeTiempo from "@/components/decision/LineaDeTiempo";
@@ -18,9 +18,15 @@ import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
 import { obtenerLote } from "@/lib/almacen";
 import { hectareas } from "@/lib/formato";
+import { kcParaCultivo } from "@/lib/cultivo";
 import { obtenerPrincipio } from "@/lib/productos";
 import { estimarValorDecision } from "@/lib/riesgo";
-import { evaluarHelada, hayRiesgoHelada } from "@/lib/helada";
+import { evaluarHelada } from "@/lib/helada";
+import Diagnostico from "@/components/sintesis/Diagnostico";
+import { sintetizar, type EntradaAgua } from "@/lib/sintesis";
+import { calcularIndiceAgotamiento } from "@/lib/agronomico";
+import { fetchHistoricoDiario } from "@/lib/historico";
+import { fechaLocalHoy } from "@/lib/formato";
 import type { ProductType } from "@/lib/spray-engine";
 import type { ForecastResponsePayload, Lote } from "@/lib/tipos";
 
@@ -36,6 +42,13 @@ export default function PaginaDecision() {
     principioId: null,
     comercial: null,
   });
+  // El balance hídrico alimenta al diagnóstico. Se guarda junto al id del
+  // lote que lo produjo: al abrir otro lote el dato deja de aplicar y la
+  // síntesis lo informa como sin datos, en vez de mostrar el del anterior.
+  const [aguaCargada, setAguaCargada] = useState<{
+    loteId: string;
+    datos: EntradaAgua;
+  } | null>(null);
 
   useEffect(() => {
     setLote(obtenerLote(params.id) ?? "no_encontrado");
@@ -66,6 +79,73 @@ export default function PaginaDecision() {
     consultar();
   }, [consultar]);
 
+  useEffect(() => {
+    if (!lote || lote === "no_encontrado" || !lote.fechaSiembra) return;
+    const { id, centroidLat, centroidLng, fechaSiembra, cultivo: cultivoLote } = lote;
+    let vigente = true;
+    fetchHistoricoDiario({
+      latitude: centroidLat,
+      longitude: centroidLng,
+      desde: fechaSiembra,
+      hasta: fechaLocalHoy(),
+    })
+      .then((dias) => {
+        if (!vigente) return;
+        const kc = kcParaCultivo(cultivoLote);
+        // La tendencia sale de recalcular el balance sin la última semana:
+        // dos puntos de la misma serie, no una segunda consulta.
+        const previos = dias.slice(0, Math.max(0, dias.length - 7));
+        setAguaCargada({
+          loteId: id,
+          datos: {
+            indiceHoy: calcularIndiceAgotamiento(dias, kc),
+            indicePrevio:
+              previos.length > 0 ? calcularIndiceAgotamiento(previos, kc) : null,
+          },
+        });
+      })
+      // Sin histórico no hay nada que guardar: el diagnóstico ya sabe decir
+      // que falta el dato.
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+  }, [lote]);
+
+  // Todos los hooks corren antes de cualquier return: su cantidad no puede
+  // cambiar entre renders.
+  const datosDelRender = datos;
+  const cultivo = lote && lote !== "no_encontrado" ? lote.cultivo : null;
+  const agua =
+    lote && lote !== "no_encontrado" && aguaCargada?.loteId === lote.id
+      ? aguaCargada.datos
+      : null;
+  const actualParaSintesis = datosDelRender
+    ? (datosDelRender.current ?? datosDelRender.hours[0] ?? null)
+    : null;
+  // Memoizado: la pantalla re-renderiza ante cada cambio del selector de
+  // producto o de la hora elegida, y evaluar 72 h en cada uno sería trabajo
+  // repetido sobre entradas que no cambiaron.
+  const diagnostico = useMemo(
+    () =>
+      sintetizar({
+        cultivo,
+        actual: actualParaSintesis,
+        ventanas: datosDelRender?.windows ?? [],
+        helada: datosDelRender
+          ? evaluarHelada(
+              datosDelRender.hours.map((h) => h.conditions),
+              cultivo,
+            )
+          : [],
+        agua,
+        // El vigor satelital consume cuota del proveedor y vive detrás del
+        // paywall: la síntesis lo informa como sin datos en vez de gastarla.
+        vigor: null,
+      }),
+    [cultivo, actualParaSintesis, datosDelRender, agua],
+  );
+
   if (lote === "no_encontrado") {
     return (
       <div className="px-5 py-8">
@@ -85,7 +165,7 @@ export default function PaginaDecision() {
     );
   }
 
-  const actual = datos ? (datos.current ?? datos.hours[0] ?? null) : null;
+  const actual = datosDelRender ? (datosDelRender.current ?? datosDelRender.hours[0] ?? null) : null;
   const seleccionada = datos
     ? (datos.hours.find((h) => h.time === horaSeleccionada) ?? actual)
     : null;
@@ -133,8 +213,8 @@ export default function PaginaDecision() {
         <Cargando />
       ) : (
         <>
+          <Diagnostico diagnostico={diagnostico} />
           <Veredicto actual={actual} esAhora={datos.current !== null} />
-          <AlertaHelada horas={datos.hours} cultivo={lote.cultivo} />
           <ValorEconomico
             valor={estimarValorDecision(actual, datos.windows[0] ?? null, lote.areaHa)}
           />
@@ -194,39 +274,5 @@ export default function PaginaDecision() {
         (CC BY 4.0).
       </footer>
     </div>
-  );
-}
-
-function AlertaHelada({
-  horas,
-  cultivo,
-}: {
-  horas: ForecastResponsePayload["hours"];
-  cultivo: string | null;
-}) {
-  const riesgos = evaluarHelada(
-    horas.map((hora) => hora.conditions),
-    cultivo,
-  );
-  const primera = riesgos.find((riesgo) => riesgo.enRiesgo);
-
-  return (
-    <section className="mt-5 rounded-xl border border-niebla p-4">
-      <h2 className="text-lg font-bold">Riesgo de helada</h2>
-      {hayRiesgoHelada(riesgos) && primera ? (
-        <>
-          <p className="mt-2 font-semibold text-bloqueo">Helada posible en las próximas 72 h</p>
-          <p className="mt-1 text-sm text-tinta/80">
-            {new Date(primera.time).toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short" })}
-          </p>
-          <p className="mt-2 text-sm text-tinta/80">{primera.razon}</p>
-        </>
-      ) : (
-        <p className="mt-2 text-sm text-tinta/80">Sin riesgo de helada detectado en las próximas 72 h.</p>
-      )}
-      <p className="mt-3 text-xs text-tinta/60">
-        Se calcula al abrir esta pantalla; no es un aviso automático en segundo plano.
-      </p>
-    </section>
   );
 }

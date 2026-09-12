@@ -1,3 +1,4 @@
+import { cultivoODefecto } from "./cultivo";
 import type { HourlyConditions } from "./spray-engine";
 
 const UMBRAL_SOJA_MAIZ_C = 0;
@@ -12,11 +13,7 @@ export interface RiesgoHelada {
 }
 
 function umbralParaCultivo(cultivo: string | null): number {
-  const normalizado = cultivo
-    ?.normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  return normalizado === "trigo" ? UMBRAL_TRIGO_C : UMBRAL_SOJA_MAIZ_C;
+  return cultivoODefecto(cultivo) === "trigo" ? UMBRAL_TRIGO_C : UMBRAL_SOJA_MAIZ_C;
 }
 
 export function evaluarHelada(
