@@ -121,16 +121,6 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Campos de carga hundidos (inputs): mismo relieve que .clay-hundido, con el
-   borde extra que necesita un <input> para leerse como "editable". */
-.clay-campo {
-  background: #f4f6fa;
-  box-shadow:
-    inset 3px 3px 6px rgba(15, 37, 78, 0.12),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
-  border: 1.5px solid #d8e2ef;
-}
-
 /* La franja marginal es rayada: el color nunca es el único portador de información. */
 .franja-rayada {
   background-color: color-mix(in srgb, var(--color-marginal) 30%, white);
