@@ -3,12 +3,13 @@
 @theme {
   /* ── Paleta neomórfica: blanco, gris y azul ──────────────────
      Una sola tonalidad de acento (azul) para no volver la app un arcoíris:
-     el color se reserva para jerarquía y estado, no para decoración. */
-  --color-papel: #ffffff;   /* superficie elevada: tarjetas, campos, chips */
-  --color-lienzo: #e9edf3;    /* lienzo de la app; de acá "emergen" las sombras */
-  --color-tinta: #101828;   /* texto: gris casi negro, alto contraste siempre */
-  --color-niebla: #d7dee8;  /* bordes y separadores suaves */
-  --color-pizarra: #1d4ed8; /* azul de acento: acciones primarias y enlaces */
+     el color se reserva para jerarquía y estado, no para decoración.
+     Valores tomados del sistema de diseño AgroCordS (rediseño definitivo). */
+  --color-papel: #ffffff;    /* superficie elevada: tarjetas, campos, chips */
+  --color-lienzo: #f4f5f7;   /* lienzo de la app; de acá "emergen" las sombras */
+  --color-tinta: #131b2e;    /* texto: gris casi negro, alto contraste siempre */
+  --color-niebla: #e2e7ff;   /* bordes y separadores suaves */
+  --color-pizarra: #00236f;  /* azul de acento: acciones primarias y enlaces */
 
   /* Reservados al veredicto de pulverización (blueprint, sección 9): el
      color es semántico ahí, nunca decorativo. No se usan en ningún otro
@@ -23,17 +24,18 @@
   --color-ndvi: #2a78d6;
   --color-ndre: #eb6834;
 
-  /* Tipografía seleccionable desde /ajustes. `--fuente-activa` la fija
-     preferencias.ts al cargar la app; sin preferencia guardada, Archivo. */
-  --font-sans: var(--fuente-activa, var(--font-archivo)), system-ui, sans-serif;
+  /* Tipografía del sistema AgroCordS: Space Grotesk, una sola familia con
+     identidad propia (no un selector entre varias) — ver /ajustes para el
+     tamaño, que sigue siendo elegible. */
+  --font-sans: var(--font-grotesk), "Space Grotesk", system-ui, sans-serif;
 }
 
 :root {
   /* Sombra dual del neomorfismo: clara arriba-izquierda, oscura
-     abajo-derecha, ambas calibradas sobre --color-lienzo para que la
-     superficie lea como si sobresaliera del lienzo (o se hundiera en él). */
-  --sombra-clara: #ffffff;
-  --sombra-oscura: #b7c3d6;
+     abajo-derecha, calibradas sobre --color-lienzo para que la superficie
+     lea como si sobresaliera del lienzo (o se hundiera en él). */
+  --sombra-clara: rgba(255, 255, 255, 0.9);
+  --sombra-oscura: rgba(160, 175, 200, 0.4);
 
   /* Multiplicador del tamaño de letra, elegido en /ajustes. Al escalar el
      font-size de <html> en vez de clases sueltas, TODA la escala de
@@ -49,6 +51,11 @@ html {
 body {
   background: var(--color-lienzo);
   color: var(--color-tinta);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Utilidades neomórficas ───────────────────────────────────
@@ -61,38 +68,44 @@ body {
 .clay-elevado {
   background: var(--color-papel);
   box-shadow:
-    7px 7px 16px var(--sombra-oscura),
-    -7px -7px 16px var(--sombra-clara);
+    -4px -4px 10px var(--sombra-clara),
+    4px 4px 12px var(--sombra-oscura);
+  transition: box-shadow 0.18s ease;
 }
 
 .clay-elevado:active {
   box-shadow:
-    inset 4px 4px 10px var(--sombra-oscura),
-    inset -4px -4px 10px var(--sombra-clara);
+    inset 3px 3px 8px var(--sombra-oscura),
+    inset -3px -3px 8px var(--sombra-clara);
 }
 
 .clay-hundido {
   background: var(--color-lienzo);
   box-shadow:
-    inset 4px 4px 9px var(--sombra-oscura),
-    inset -3px -3px 7px var(--sombra-clara);
+    inset 3px 3px 6px var(--sombra-oscura),
+    inset -3px -3px 6px var(--sombra-clara);
 }
 
 .clay-boton-primario {
-  background: linear-gradient(160deg, #4c86f0, var(--color-pizarra));
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f254e 100%);
   box-shadow:
-    0 10px 22px -8px rgba(29, 78, 216, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 10px 20px rgba(15, 37, 78, 0.3),
+    -4px -4px 12px var(--sombra-clara);
+  transition: all 0.18s ease;
 }
 
 .clay-boton-primario:active {
+  transform: scale(0.985);
   box-shadow:
-    0 4px 10px -4px rgba(29, 78, 216, 0.5),
-    inset 0 2px 6px rgba(0, 0, 0, 0.25);
+    inset 3px 3px 8px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(15, 37, 78, 0.2);
 }
 
 .clay-tono-azul {
-  background: linear-gradient(160deg, #4c86f0, var(--color-pizarra));
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #dbe4ff 45%, #6f93f2 100%);
+  box-shadow:
+    inset -3px -3px 6px rgba(15, 37, 78, 0.3),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.9);
   color: #ffffff;
 }
 
@@ -103,9 +116,19 @@ body {
 
 .clay-insignia {
   box-shadow:
-    4px 4px 10px var(--sombra-oscura),
+    4px 5px 10px var(--sombra-oscura),
     -4px -4px 10px var(--sombra-clara),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Campos de carga hundidos (inputs): mismo relieve que .clay-hundido, con el
+   borde extra que necesita un <input> para leerse como "editable". */
+.clay-campo {
+  background: #f4f6fa;
+  box-shadow:
+    inset 3px 3px 6px rgba(15, 37, 78, 0.12),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  border: 1.5px solid #d8e2ef;
 }
 
 /* La franja marginal es rayada: el color nunca es el único portador de información. */

@@ -1,24 +1,15 @@
 import type { Metadata } from "next";
-import { Archivo, Atkinson_Hyperlegible, Lexend, Nunito } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import "./globals.css";
 import AplicarPreferencias from "@/components/ui/AplicarPreferencias";
-import BarraNavegacion from "@/components/ui/BarraNavegacion";
+import AppShell from "@/components/ui/AppShell";
 
-// Cuatro familias, cada una con un motivo (ver /ajustes): Archivo es la
-// tipografía de origen del proyecto; las otras tres están elegidas por
-// legibilidad, no por variedad. Las cuatro quedan siempre cargadas como
-// variables CSS — elegir una no descarga a las demás — porque /ajustes
-// necesita mostrar la vista previa de las cuatro a la vez.
-const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo" });
-const legible = Atkinson_Hyperlegible({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-legible",
-});
-const redondeada = Nunito({ subsets: ["latin"], variable: "--font-redondeada" });
-const lectura = Lexend({ subsets: ["latin"], variable: "--font-lectura" });
+// Space Grotesk: la tipografía del sistema de diseño AgroCordS, una sola
+// familia con identidad propia (ver globals.css). El tamaño sigue siendo
+// elegible desde /ajustes, la familia ya no.
+const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" });
 
 export const metadata: Metadata = {
   title: "Ventana de Aplicación",
@@ -30,16 +21,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="es"
-      className={`${archivo.variable} ${legible.variable} ${redondeada.variable} ${lectura.variable}`}
-    >
+    <html lang="es" className={grotesk.variable}>
       <body className="font-sans antialiased">
         <AplicarPreferencias />
-        <main className="mx-auto min-h-dvh w-full max-w-[480px] bg-lienzo pb-24">
-          {children}
-        </main>
-        <BarraNavegacion />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

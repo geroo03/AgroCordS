@@ -1,6 +1,11 @@
 /**
- * Preferencias de lectura: tipografía y tamaño de texto, elegidas desde
- * /ajustes y aplicadas a toda la app, no sólo a una pantalla.
+ * Preferencia de lectura: tamaño de texto, elegido desde /ajustes y aplicado
+ * a toda la app, no sólo a una pantalla.
+ *
+ * La tipografía dejó de ser elegible con el rediseño AgroCordS: el sistema
+ * de diseño define una sola familia (Space Grotesk, ver globals.css/layout.tsx)
+ * como parte de su identidad, no un selector entre varias. Lo que sigue
+ * siendo una preferencia real es el tamaño — accesibilidad, no estética.
  *
  * El tamaño se implementa como un multiplicador del font-size de <html>
  * (ver globals.css: `html { font-size: calc(16px * var(--escala-fuente)) }`).
@@ -11,22 +16,13 @@
 
 const CLAVE = "ventana.preferencias.v1";
 
-export type FuenteId = "archivo" | "legible" | "redondeada" | "lectura";
 export type TamanoFuente = "normal" | "grande" | "muy_grande";
 
 export interface Preferencias {
-  readonly fuente: FuenteId;
   readonly tamano: TamanoFuente;
 }
 
-const POR_DEFECTO: Preferencias = { fuente: "archivo", tamano: "normal" };
-
-export const ETIQUETA_FUENTE: Record<FuenteId, { nombre: string; detalle: string }> = {
-  archivo: { nombre: "Archivo", detalle: "La de siempre" },
-  legible: { nombre: "Atkinson Hyperlegible", detalle: "Máxima legibilidad" },
-  redondeada: { nombre: "Nunito", detalle: "Redondeada y cálida" },
-  lectura: { nombre: "Lexend", detalle: "Pensada para leer rápido" },
-};
+const POR_DEFECTO: Preferencias = { tamano: "normal" };
 
 export const ETIQUETA_TAMANO: Record<TamanoFuente, string> = {
   normal: "Normal",
@@ -43,7 +39,7 @@ export const ESCALA_TAMANO: Record<TamanoFuente, number> = {
 function esValida(valor: unknown): valor is Preferencias {
   if (!valor || typeof valor !== "object") return false;
   const v = valor as Record<string, unknown>;
-  return typeof v.fuente === "string" && typeof v.tamano === "string";
+  return typeof v.tamano === "string";
 }
 
 export function leerPreferencias(): Preferencias {
@@ -66,9 +62,8 @@ export function guardarPreferencias(p: Preferencias): void {
   }
 }
 
-/** Escribe las dos variables CSS que leen globals.css y los estilos inline. */
+/** Escribe la variable CSS que lee globals.css. */
 export function aplicarPreferencias(p: Preferencias): void {
   if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty("--fuente-activa", `var(--font-${p.fuente})`);
   document.documentElement.style.setProperty("--escala-fuente", String(ESCALA_TAMANO[p.tamano]));
 }

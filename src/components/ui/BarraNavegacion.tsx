@@ -20,8 +20,8 @@ const PESTANAS = [
 /**
  * Barra de pestañas inferior, neomórfica y fija. Cada ícono lleva su
  * etiqueta de texto al lado siempre — nunca reemplaza a la palabra — y la
- * pestaña activa se distingue por tres señales a la vez (insignia azul
- * rellena, peso de la letra y color), no sólo por el color.
+ * pestaña activa se distingue por tres señales a la vez (tarjeta hundida,
+ * insignia azul rellena y peso de la letra), no sólo por el color.
  */
 export default function BarraNavegacion() {
   const pathname = usePathname();
@@ -29,9 +29,9 @@ export default function BarraNavegacion() {
   return (
     <nav
       aria-label="Secciones"
-      className="clay-elevado fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[480px] rounded-t-3xl pb-[env(safe-area-inset-bottom)]"
+      className="clay-elevado fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[480px] rounded-t-3xl px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-4 gap-1.5">
         {PESTANAS.map(({ href, etiqueta, Icono }) => {
           const activa = pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -39,15 +39,15 @@ export default function BarraNavegacion() {
               key={href}
               href={href}
               aria-current={activa ? "page" : undefined}
-              className="flex min-h-16 flex-col items-center justify-center gap-1 py-2"
+              className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl py-2 transition-all active:scale-[0.98] ${
+                activa ? "clay-hundido" : ""
+              }`}
             >
               <IconoClay tono={activa ? "azul" : "neutro"} tamano="sm">
                 <Icono />
               </IconoClay>
               <span
-                className={`text-xs ${
-                  activa ? "font-bold text-pizarra" : "font-semibold text-tinta/60"
-                }`}
+                className={`text-xs ${activa ? "font-bold text-pizarra" : "font-semibold text-tinta/60"}`}
               >
                 {etiqueta}
               </span>

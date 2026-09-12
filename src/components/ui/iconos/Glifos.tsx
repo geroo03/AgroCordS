@@ -111,3 +111,76 @@ export function GlifoContexto() {
     </svg>
   );
 }
+
+/** Correo: sobre cerrado. Para el login por magic link. */
+export function GlifoCorreo() {
+  return (
+    <svg {...BASE}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </svg>
+  );
+}
+
+/** Correo ya abierto/leído: mismo sobre, con el tilde de confirmación. */
+export function GlifoCorreoAbierto() {
+  return (
+    <svg {...BASE}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+      <path d="M9 16l2 2 4-4" />
+    </svg>
+  );
+}
+
+/** Continuar/enviar: flecha simple hacia la derecha. */
+export function GlifoFlechaDerecha() {
+  return (
+    <svg {...BASE}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/** Reintentar/reenviar: flecha circular. */
+export function GlifoRefrescar() {
+  return (
+    <svg {...BASE}>
+      <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" />
+      <path d="M3 21v-5h5" />
+    </svg>
+  );
+}
+
+/** Alerta: signo de exclamación dentro de un triángulo. */
+export function GlifoAlerta() {
+  return (
+    <svg {...BASE}>
+      <path d="M12 3 2 20h20L12 3z" />
+      <path d="M12 10v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+/** Perfil de usuario: cabeza y hombros, para el botón de sesión. */
+export function GlifoPersona() {
+  return (
+    <svg {...BASE}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.5-6 8-6s8 2 8 6" />
+    </svg>
+  );
+}
+
+/** Cerrar sesión: puerta con flecha de salida. */
+export function GlifoSalir() {
+  return (
+    <svg {...BASE}>
+      <path d="M15 4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7" />
+      <path d="M11 12h10M17 8l4 4-4 4" />
+    </svg>
+  );
+}

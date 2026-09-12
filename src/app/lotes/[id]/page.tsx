@@ -15,6 +15,7 @@ import ValorEconomico from "@/components/decision/ValorEconomico";
 import Cargando from "@/components/ui/Cargando";
 import ErrorEstado from "@/components/ui/ErrorEstado";
 import Vacio from "@/components/ui/Vacio";
+import SubNavLote from "@/components/ui/SubNavLote";
 import { listarAplicaciones, obtenerLote } from "@/lib/almacen";
 import BotonChat from "@/components/chat/BotonChat";
 import { hectareas } from "@/lib/formato";
@@ -223,7 +224,7 @@ export default function PaginaDecision() {
 
   return (
     <div className="px-5 pb-24">
-      <header className="border-b border-niebla py-3">
+      <header className="pt-3 pb-4">
         <Link
           href="/lotes"
           className="flex min-h-11 min-w-0 items-center gap-2 font-semibold text-pizarra"
@@ -234,26 +235,9 @@ export default function PaginaDecision() {
             {lote.nombre} · {hectareas(lote.areaHa)}
           </span>
         </Link>
-        {/* Segunda fila: con cuatro vistas los enlaces ya no entran al lado del
-            nombre en un teléfono (quedaba truncado a una letra). Se desplazan
-            en horizontal y llegan hasta el borde de la pantalla. */}
-        <nav
-          aria-label="Vistas del lote"
-          className="-mx-5 mt-1 flex gap-4 overflow-x-auto px-5 text-sm font-semibold text-pizarra"
-        >
-          <Link href={`/lotes/${lote.id}/ndvi`} className="flex min-h-11 shrink-0 items-center underline">
-            NDVI
-          </Link>
-          <Link href={`/lotes/${lote.id}/riesgo`} className="flex min-h-11 shrink-0 items-center underline">
-            Riesgo
-          </Link>
-          <Link href={`/lotes/${lote.id}/historial`} className="flex min-h-11 shrink-0 items-center underline">
-            Historial
-          </Link>
-          <Link href={`/lotes/${lote.id}/agronomico`} className="flex min-h-11 shrink-0 items-center underline">
-            Agronómico
-          </Link>
-        </nav>
+        <div className="mt-3">
+          <SubNavLote loteId={lote.id} />
+        </div>
       </header>
 
       {error && !datos ? (
@@ -309,7 +293,7 @@ export default function PaginaDecision() {
         </>
       )}
 
-      <footer className="fixed inset-x-0 bottom-16 z-40 mx-auto w-full max-w-[480px] border-t border-niebla bg-papel/95 px-5 py-2 text-[11px] leading-snug text-tinta/70 backdrop-blur">
+      <footer className="clay-hundido fixed inset-x-0 bottom-16 z-40 mx-auto w-full max-w-[480px] px-5 py-2 text-[11px] leading-snug text-tinta/70 backdrop-blur">
         Esta app informa condiciones meteorológicas y no reemplaza la receta
         fitosanitaria de un profesional matriculado. Datos meteorológicos de{" "}
         <a
